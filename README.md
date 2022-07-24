@@ -34,6 +34,10 @@ def rexf(fn):
     
 ##  Using the code
 
+We ran 2 types of experiments.  TMB1 is the experiment where players played against 4 types of fixed rules for 30 games each.  TMB2 was the experiment
+where players played 300 games against an AI that learned the player's biases on-line, so the AI kept up if players changed gameplay rules.  We first
+describe TMB2 experiment.
+
 Given the nature of data collection - anonymous participants recruited online, we don't have a way to control or demand a level of quality
 control found in laboratory experiments.  Players might be rushing through the games, they might not complete all portions of the data
 collection, many players might be playing at the same time.  We first build a list of data collected, and store in $RPSWORKDIR/TMB2fns_[1].txt
