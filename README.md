@@ -8,7 +8,7 @@ use the idea of Covert Adjustments of Behavior (CAB).
 
 Setting up.
 
-You need python 3, numpy, matplotlib, scipy.  This program is run from the command line.
+You need python 3, numpy, matplotlib, scipy, sklearn.  This program is run from the command line.
 
 You need to set 2 environment variables:
 ```
