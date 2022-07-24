@@ -17,8 +17,9 @@ from sklearn.linear_model import LassoCV
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import sklearn.preprocessing as _skp
 import pickle
-import cv_funcs as cvf
+import RPSvAI.utils.cv_funcs as cvf
 import os
+from RPSvAI.utils.dir_util import workdirFN, outdirFN
 
 #------------------ SOCIAL SKILLS     [0, 1, 2, 3, 4, 5, 6]
 #0   1C  "I prefer to do things with others rather than on my own.",
@@ -103,12 +104,9 @@ def unskew(dat):
 win_type = 2  #  window is of fixed number of games that meet condition 
 win     = 3
 smth    = 1
+label=str(win_type*100 + win*10 + smth)
 
-outdir = "Results_%(wt)d%(w)d%(s)d" % {"wt" : win_type, "w" : win, "s" : smth}
-if not os.access(outdir, os.F_OK):
-    os.mkdir(outdir)
-
-lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
+lm = depickle(workdirFN("AQ28_vs_RPS_1_%s.dmp" % label))
 
 AQ28scores = ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]
 AQ28scores_ab = ["AQ28", "SS", "IM", "RT", "SW", "FP"]
@@ -337,7 +335,7 @@ for ish in range(SHUFFLES+1):
             """
             fig.subplots_adjust(wspace=1.7, hspace=0.95)
 
-            _plt.savefig("%(od)s/lassoAQ28_%(tar)s_%(pcth)d%(sh)s.png" % {"tar" : starget, "pcth" : top_pcs, "sh" : sshf, "od" : outdir})
+            _plt.savefig(outdirFN("lassoAQ28_%(tar)s_%(pcth)d%(sh)s.png" % {"tar" : starget, "pcth" : top_pcs, "sh" : sshf}, label))
             _plt.close()
 
             ccs_bundles["inscr_%(pct)d_%(tar)s%(sh)s" % {"tar" : starget, "sh" : sshf, "pct" : top_pcs}] = inner_scores
@@ -361,7 +359,7 @@ for ish in range(SHUFFLES+1):
             ccs_bundles["name_weight_srtd_%(pct)d_%(tar)s%(sh)s" % {"tar" : starget, "sh" : sshf, "pct" : top_pcs}] = name_weight_srtd
 
     if ((ish > 0) and (ish % 10 == 0)) or (ish == SHUFFLES):
-        dmpout = open("%(od)s/pcpvs_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth, "od" : outdir}, "wb")
+        dmpout = open(workdirFN("pcpvs_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth}), "wb")
         pickle.dump(ccs_bundles, dmpout, -1)
         dmpout.close()
 
