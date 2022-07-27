@@ -17,12 +17,13 @@ win_type = 2  #  window is of fixed number of games that meet condition
 wins= 3
 gk_w = 1
 
-visit = 1
-visits=[1]
+visit = 1    #  which visit number data do we want?
+visits=[1]   #  if [1], look for data that has at least 1 web page visit to game
+             #  if [1, 2] look for data that has at least 2 web page visit to game - ie they played at least 2 x 300 games.  
 
 #  These are ParticipantIDs.
 
-expt="TMB2"
+expt="TMB2"  #  experiment name
 
 datetms = []
 
@@ -67,6 +68,9 @@ for datetm in datetms[0:1]:
     #  ini_percep    initial perceptron parameter (before 1st game played)
     #  fin_percep    final perceptron parameter (after last game played)
     #  gt_dump       for simulated human, the ground truth conditional response rules at all times used to generate generated moves
+
+    ######  A REALLY simple feature might be "net number of wins"
+    #  netwins = _N.sum(td[:, 2])  # Just a sum of the WTL column
 
     #  recreate the AI weight parameters (evolution of AI during games)
     if ini_percep is not None:
