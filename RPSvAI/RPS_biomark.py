@@ -632,16 +632,16 @@ for partID in partIDs:
     
     #rsp_tms_cv[pid-1] = _N.std(_hnd_dat[:, 3]) / _N.mean(_hnd_dat[:, 3])
     marginalCRs[pid-1] = _emp.marginalCR(_hnd_dat)
-    prob_mvs  = _prob_mvs[:, 0:TO - win]  #  is bigger than hand by win size
-    prob_mvsRPS  = _prob_mvsRPS[:, 0:TO - win]  #  is bigger than hand by win size
+    prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, 0:TO - win]  #  is bigger than hand by win size
+    prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsDSURPS  = _prob_mvsDSURPS[:, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, 0:TO - win]  #  is bigger than hand by win size        
     prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, 0:TO - win]  #  is bigger than hand by win size        
     
     #prob_mvs_STSW  = _prob_mvs_STSW[:, 0:TO - win]  #  is bigger than hand by win size    
-    prob_mvs = prob_mvs.reshape((3, 3, prob_mvs.shape[1]))
-    prob_mvs_RPS = prob_mvsRPS.reshape((3, 3, prob_mvsRPS.shape[1]))
+    prob_mvs_DSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
+    prob_mvs_RPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
     prob_mvs_DSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
     prob_mvs_DSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))
     prob_mvs_RPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))    
@@ -655,7 +655,7 @@ for partID in partIDs:
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSURPS, prob_mvs_RPS, prob_mvs], None, equalize=False, weight=False)
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_RPS, prob_mvs_DSUAIRPS], None, biggest=True, top_comps=4)
 
-    dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvs, prob_mvsRPS, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
+    dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
     maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
     
     
@@ -703,12 +703,12 @@ for partID in partIDs:
     
     
     PCS=3
-    prob_Mimic            = _N.empty((3, prob_mvs.shape[2]))
-    prob_Mimic_v2            = _N.empty((3, prob_mvs.shape[2]))    
+    prob_Mimic            = _N.empty((3, prob_mvsDSUWTL.shape[2]))
+    prob_Mimic_v2            = _N.empty((3, prob_mvsDSUWTL.shape[2]))    
     #sd_M[pid-1]               = _N.std(prob_mvs[0, 0] + prob_mvs[1, 1] + prob_mvs[2, 2])
-    sd_M[pid-1]               = _N.std(prob_mvs[0, 0] + prob_mvs[2, 2])
+    sd_M[pid-1]               = _N.std(prob_mvsDSUWTL[0, 0] + prob_mvsDSUWTL[2, 2])
     t00 = 5
-    t01 = prob_mvs.shape[2]-5
+    t01 = prob_mvsDSUWTL.shape[2]-5
     ctprob_mvs          = prob_mvs[:, :, t00:t01]
 
     sdsDSUWTL = _N.std(ctprob_mvs, axis=2)
@@ -716,9 +716,9 @@ for partID in partIDs:
     #skwDSUWTL = _ss.kurtosis(ctprob_mvs, axis=2)
     for i in range(3):
         for j in range(3):
-            sum_ent_DSUWTL[pid-1, i, j] = _aift.entropy1(ctprob_mvs[i, j], 10)
+            sum_ent_DSUWTL[pid-1, i, j] = _aift.entropy1(ctprob_mvsDSUWTL[i, j], 10)
 
-    sdsRPSWTL = _N.std(prob_mvs_RPS, axis=2)
+    sdsRPSWTL = _N.std(prob_mvs_RPSWTL, axis=2)
     sdsDSURPS = _N.std(prob_mvs_DSURPS, axis=2)
     #sdsDSURPS = _ss.kurtosis(prob_mvs_DSURPS, axis=2)
     #sdsDSUAIRPS = _N.std(prob_mvs_DSUAIRPS, axis=2)
@@ -727,8 +727,8 @@ for partID in partIDs:
     sdsRPSAIRPS = _N.std(prob_mvs_RPSAIRPS, axis=2)                
  
     #sds = _N.std(prob_pcs, axis=0)
-    mns = _N.mean(ctprob_mvs, axis=2)
-    mnsRPS = _N.mean(prob_mvs_RPS, axis=2)
+    mnsDSUWTL = _N.mean(ctprob_mvsDSUWTL, axis=2)
+    mnsRPSWTL = _N.mean(prob_mvs_RPSWTL, axis=2)
     mnsDSURPS = _N.mean(prob_mvs_DSURPS, axis=2)
     mnsDSUAIRPS = _N.mean(prob_mvs_DSUAIRPS, axis=2)         
     mnsRPSRPS = _N.mean(prob_mvs_RPSRPS, axis=2)
@@ -738,7 +738,7 @@ for partID in partIDs:
     #sum_cv[pid-1] = sds/(1-_N.abs(0.5-mns))
     sum_sd_DSUWTL[pid-1] = sdsDSUWTL
     #sum_skew_DSUWTL[pid-1] = skwDSUWTL    
-    sum_mn[pid-1] = mns
+    sum_mn_DSUWTL[pid-1] = mnsDSUWTL
     sum_mn_DSURPS[pid-1] = mnsDSURPS
     sum_sd_RPSWTL[pid-1] = sdsRPSWTL
     sum_sd_DSURPS[pid-1] = sdsDSURPS
@@ -750,7 +750,7 @@ for partID in partIDs:
 
     #  DSUWTL_corrs[pid-1]
     #  DSUWTL_corrs = _N.empty((36, len(participants)))
-    DSUWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs)
+    DSUWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsDSUWTL)
     DSUAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_DSUAIRPS)    
     DSURPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_DSURPS)
     RPSWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_RPS)
@@ -758,9 +758,9 @@ for partID in partIDs:
     RPSAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_RPSAIRPS)
     
 
-    prob_Mimic[0]      = prob_mvs[0, 0]   #  DN | WIN
-    prob_Mimic[1]      = prob_mvs[1, 1]   #  ST | TIE
-    prob_Mimic[2]      = prob_mvs[2, 2]   #  UP | LOS
+    prob_Mimic[0]      = prob_mvsDSUWTL[0, 0]   #  DN | WIN
+    prob_Mimic[1]      = prob_mvsDSUWTL[1, 1]   #  ST | TIE
+    prob_Mimic[2]      = prob_mvsDSUWTL[2, 2]   #  UP | LOS
 
 
     mimic_mean[pid-1]  =     len(_N.where(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])[0])#_N.mean(prob_mvs[0, 0]) + _N.mean(prob_mvs[1, 1]) + _N.mean(prob_mvs[2, 2])
@@ -776,20 +776,20 @@ for partID in partIDs:
     #pc12, pv02 = _ss.pearsonr(prob_Mimic[1], prob_Mimic[2])        
 
     #pc_Mimic[pid-1] = pc01+pc02+pc12
-    prob_Beat            = _N.empty((3, prob_mvs.shape[2]))
-    prob_Beat_v2            = _N.empty((3, prob_mvs.shape[2]))
+    prob_Beat            = _N.empty((3, prob_mvsDSUWTL.shape[2]))
+    prob_Beat_v2            = _N.empty((3, prob_mvsDSUWTL.shape[2]))
     
-    prob_Beat[0]       = prob_mvs[0, 1]   #  ST | WIN
-    prob_Beat[1]       = prob_mvs[1, 2]
-    prob_Beat[2]       = prob_mvs[2, 0]
+    prob_Beat[0]       = prob_mvsDSUWTL[0, 1]   #  ST | WIN
+    prob_Beat[1]       = prob_mvsDSUWTL[1, 2]
+    prob_Beat[2]       = prob_mvsDSUWTL[2, 0]
 
-    prob_Lose            = _N.empty((3, prob_mvs.shape[2]))
+    prob_Lose            = _N.empty((3, prob_mvsDSUWTL.shape[2]))
 
     #  HP   R   P (UP|WIN)        R   S   (DN | TIE)      R  R   (ST | LOSE)
     #  AI   S                     R                       P
-    prob_Lose[0]       = prob_mvs[0, 2]   #  UP | WIN
-    prob_Lose[1]       = prob_mvs[1, 0]   #  DN | TIE
-    prob_Lose[2]       = prob_mvs[2, 1]   #  ST | LOS
+    prob_Lose[0]       = prob_mvsDSUWTL[0, 2]   #  UP | WIN
+    prob_Lose[1]       = prob_mvsDSUWTL[1, 0]   #  DN | TIE
+    prob_Lose[2]       = prob_mvsDSUWTL[2, 1]   #  ST | LOS
 
     prob_Beat_v2[0]       = prob_mvs_DSUAIRPS[0, 2]   #  ALWAYS UPGRADE
     prob_Beat_v2[1]       = prob_mvs_DSUAIRPS[1, 2]
@@ -810,7 +810,7 @@ for partID in partIDs:
     pB1[pid-1] = _N.mean(prob_Beat[0, 0:150] + prob_Beat[1, 0:150] + prob_Beat[2, 0:150])
     pB2[pid-1] = _N.mean(prob_Beat[0, 150:] + prob_Beat[1, 150:] + prob_Beat[2, 150:])
 
-    kurt3[pid-1] = _ss.kurtosis(prob_mvs[0, 0] + prob_mvs[2, 2])
+    kurt3[pid-1] = _ss.kurtosis(prob_mvsDSUWTL[0, 0] + prob_mvsDSUWTL[2, 2])
     #kurt4[pid-1] = _ss.kurtosis(prob_mvs_RPS[0, 0])
     
     pMimic_Beat[pid-1], pv = _ss.pearsonr(_N.mean(prob_Mimic, axis=0), _N.mean(prob_Beat, axis=0))
@@ -837,7 +837,7 @@ for partID in partIDs:
     pB = _N.mean(prob_Beat, axis=0)
     pM = _N.mean(prob_Mimic, axis=0)
     ccBM[pid-1], pv = _ss.pearsonr(pB, pM)
-    all_prob_mvs.append(prob_mvs)    #  plot out to show range of CRs
+    all_prob_mvs.append(prob_mvsDSUWTL)    #  plot out to show range of CRs
 
     # prob_pcs = _N.empty((len(maxs)-1, 3, 3))
     # for i in range(len(maxs)-1):
@@ -921,7 +921,7 @@ for partID in partIDs:
     #                     entropy3(ctprob_mvs[2].T, PCS)])
 
     #  most variable probability for each condition
-    mst_var_DSUWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvs, axis=2), axis=1)[:, 2])
+    mst_var_DSUWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSUWTL, axis=2), axis=1)[:, 2])
     mst_var_DSURPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSURPS, axis=2), axis=1)[:, 2])
     mst_var_RPSWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_RPS, axis=2), axis=1)[:, 2])
     mst_var_DSUAIRPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSUAIRPS, axis=2), axis=1)[:, 2])
