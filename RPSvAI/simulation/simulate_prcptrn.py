@@ -1,4 +1,4 @@
-import AIiRPS.simulation.prcptrnJS as _prcp
+import RPSvAI.simulation.prcptrnJS as _prcp
 import numpy as _N
 
 def recreate_percep_istate(hnd_dat, ini_percep_str, fin_percep_str):

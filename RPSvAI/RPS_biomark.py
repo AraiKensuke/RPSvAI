@@ -121,9 +121,9 @@ def only_complete_data(partIDs, TO, label, SHF_NUM):
     for partID in partIDs:
         pid += 1
 
-        dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/WTL_1.dmp" % {"rpsm" : partID, "lb" : label}))
-        _prob_mvs = dmp["cond_probs"][SHF_NUM]
-        _prob_mvsRPS = dmp["cond_probsRPS"][SHF_NUM]
+        dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
+        _prob_mvs = dmp["cond_probsDSUWTL"][SHF_NUM]
+        _prob_mvsRPS = dmp["cond_probsRPSWTL"][SHF_NUM]
         _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
         __hnd_dat = dmp["all_tds"][SHF_NUM]
         _hnd_dat   = __hnd_dat[0:TO]
@@ -358,7 +358,7 @@ sum_skew_DSUWTL = _N.empty((len(partIDs), 3, 3))
 
 sum_ent_DSUWTL = _N.empty((len(partIDs), 3, 3))
 
-sum_mn = _N.empty((len(partIDs), 3, 3))
+sum_mn_DSUWTL = _N.empty((len(partIDs), 3, 3))
 sum_mn_DSURPS = _N.empty((len(partIDs), 3, 3))
 sum_sd_DSUAIRPS = _N.empty((len(partIDs), 3, 3))
 sum_mn_DSUAIRPS = _N.empty((len(partIDs), 3, 3))
@@ -564,21 +564,22 @@ for partID in partIDs:
     if (partID != "20210801_0015-00") and (partID != "20210801_0020-00") and (partID != "20211021_0130-00") and (partID != "20210924_0025-00") and (partID != "20211004_0015-00") and (partID != "20211018_0010-00"):
         not_outliers.append(pid-1)
 
-    dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/WTL_%(v)d.dmp" % {"rpsm" : partID, "lb" : label, "v" : visit}))
-    _prob_mvs = dmp["cond_probs"][SHF_NUM][:, strtTr:]
-    _prob_mvsRPS = dmp["cond_probsRPS"][SHF_NUM][:, strtTr:]
-    _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM][:, strtTr:]
+
+    dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
+    _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM]
+    _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM]
+    _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
     _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][SHF_NUM][:, strtTr:]
     _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][SHF_NUM][:, strtTr:]
     _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][SHF_NUM][:, strtTr:]    
-    amp1 = amplitude_ts1(_prob_mvs, 24)
-    amp2 = amplitude_ts1(_prob_mvsRPS, 24)
+    amp1 = amplitude_ts1(_prob_mvsDSUWTL, 24)
+    amp2 = amplitude_ts1(_prob_mvsRPSWTL, 24)
     amp3 = amplitude_ts1(_prob_mvsDSURPS, 24)
     amp4 = amplitude_ts1(_prob_mvsDSUAIRPS, 24)
     amp5 = amplitude_ts1(_prob_mvsRPSRPS, 24)
     amp6 = amplitude_ts1(_prob_mvsRPSAIRPS, 24)            
-    near0_1[pid-1], near13_1[pid-1], near1_1[pid-1] = t_near13(_prob_mvs)
-    near0_2[pid-1], near13_2[pid-1], near1_2[pid-1] = t_near13(_prob_mvsRPS)
+    near0_1[pid-1], near13_1[pid-1], near1_1[pid-1] = t_near13(_prob_mvsDSUWTL)
+    near0_2[pid-1], near13_2[pid-1], near1_2[pid-1] = t_near13(_prob_mvsRPSWTL)
     near0_3[pid-1], near13_3[pid-1], near1_3[pid-1] = t_near13(_prob_mvsDSURPS)
     near0_4[pid-1], near13_4[pid-1], near1_4[pid-1] = t_near13(_prob_mvsDSUAIRPS)    
 
@@ -640,12 +641,12 @@ for partID in partIDs:
     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, 0:TO - win]  #  is bigger than hand by win size        
     
     #prob_mvs_STSW  = _prob_mvs_STSW[:, 0:TO - win]  #  is bigger than hand by win size    
-    prob_mvs_DSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
-    prob_mvs_RPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
-    prob_mvs_DSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
-    prob_mvs_DSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))
-    prob_mvs_RPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))    
-    prob_mvs_RPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))    
+    prob_mvsDSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
+    prob_mvsRPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
+    prob_mvsDSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
+    prob_mvsDSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))
+    prob_mvsRPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))    
+    prob_mvsRPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))    
     
     #prob_mvs_STSW = prob_mvs_STSW.reshape((3, 2, prob_mvs_STSW.shape[1]))
     #  behv is the rate of change
@@ -655,7 +656,7 @@ for partID in partIDs:
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSURPS, prob_mvs_RPS, prob_mvs], None, equalize=False, weight=False)
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_RPS, prob_mvs_DSUAIRPS], None, biggest=True, top_comps=4)
 
-    dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
+    dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvsDSURPS, prob_mvsDSUAIRPS, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
     maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
     
     
@@ -709,30 +710,30 @@ for partID in partIDs:
     sd_M[pid-1]               = _N.std(prob_mvsDSUWTL[0, 0] + prob_mvsDSUWTL[2, 2])
     t00 = 5
     t01 = prob_mvsDSUWTL.shape[2]-5
-    ctprob_mvs          = prob_mvs[:, :, t00:t01]
+    ctprob_mvsDSUWTL          = prob_mvsDSUWTL[:, :, t00:t01]
 
-    sdsDSUWTL = _N.std(ctprob_mvs, axis=2)
+    sdsDSUWTL = _N.std(ctprob_mvsDSUWTL, axis=2)
     #sdsDSUWTL = _ss.kurtosis(ctprob_mvs, axis=2)
     #skwDSUWTL = _ss.kurtosis(ctprob_mvs, axis=2)
     for i in range(3):
         for j in range(3):
             sum_ent_DSUWTL[pid-1, i, j] = _aift.entropy1(ctprob_mvsDSUWTL[i, j], 10)
 
-    sdsRPSWTL = _N.std(prob_mvs_RPSWTL, axis=2)
-    sdsDSURPS = _N.std(prob_mvs_DSURPS, axis=2)
-    #sdsDSURPS = _ss.kurtosis(prob_mvs_DSURPS, axis=2)
+    sdsRPSWTL = _N.std(prob_mvsRPSWTL, axis=2)
+    sdsDSURPS = _N.std(prob_mvsDSURPS, axis=2)
+    #sdsDSURPS = _ss.kurtosis(prob_mvsDSURPS, axis=2)
     #sdsDSUAIRPS = _N.std(prob_mvs_DSUAIRPS, axis=2)
-    sdsDSUAIRPS = _N.std(prob_mvs_DSUAIRPS, axis=2)
-    sdsRPSRPS = _N.std(prob_mvs_RPSRPS, axis=2)
-    sdsRPSAIRPS = _N.std(prob_mvs_RPSAIRPS, axis=2)                
+    sdsDSUAIRPS = _N.std(prob_mvsDSUAIRPS, axis=2)
+    sdsRPSRPS = _N.std(prob_mvsRPSRPS, axis=2)
+    sdsRPSAIRPS = _N.std(prob_mvsRPSAIRPS, axis=2)                
  
     #sds = _N.std(prob_pcs, axis=0)
     mnsDSUWTL = _N.mean(ctprob_mvsDSUWTL, axis=2)
-    mnsRPSWTL = _N.mean(prob_mvs_RPSWTL, axis=2)
-    mnsDSURPS = _N.mean(prob_mvs_DSURPS, axis=2)
-    mnsDSUAIRPS = _N.mean(prob_mvs_DSUAIRPS, axis=2)         
-    mnsRPSRPS = _N.mean(prob_mvs_RPSRPS, axis=2)
-    mnsRPSAIRPS = _N.mean(prob_mvs_RPSAIRPS, axis=2)         
+    mnsRPSWTL = _N.mean(prob_mvsRPSWTL, axis=2)
+    mnsDSURPS = _N.mean(prob_mvsDSURPS, axis=2)
+    mnsDSUAIRPS = _N.mean(prob_mvsDSUAIRPS, axis=2)         
+    mnsRPSRPS = _N.mean(prob_mvsRPSRPS, axis=2)
+    mnsRPSAIRPS = _N.mean(prob_mvsRPSAIRPS, axis=2)         
     
     
     #sum_cv[pid-1] = sds/(1-_N.abs(0.5-mns))
@@ -751,11 +752,11 @@ for partID in partIDs:
     #  DSUWTL_corrs[pid-1]
     #  DSUWTL_corrs = _N.empty((36, len(participants)))
     DSUWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsDSUWTL)
-    DSUAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_DSUAIRPS)    
-    DSURPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_DSURPS)
-    RPSWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_RPS)
-    RPSRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_RPSRPS)
-    RPSAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvs_RPSAIRPS)
+    DSUAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsDSUAIRPS)    
+    DSURPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsDSURPS)
+    RPSWTL_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsRPSWTL)
+    RPSRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsRPSRPS)
+    RPSAIRPS_corrs[:, pid-1]      = _aift.corr_btwn_probCRcomps(prob_mvsRPSAIRPS)
     
 
     prob_Mimic[0]      = prob_mvsDSUWTL[0, 0]   #  DN | WIN
@@ -766,9 +767,9 @@ for partID in partIDs:
     mimic_mean[pid-1]  =     len(_N.where(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])[0])#_N.mean(prob_mvs[0, 0]) + _N.mean(prob_mvs[1, 1]) + _N.mean(prob_mvs[2, 2])
     beat_mean[pid-1]  =     len(_N.where(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])[0])#_N.mean(prob_mvs[0, 0]) + _N.mean(prob_mvs[1, 1]) + _N.mean(prob_mvs[2, 2])    
 
-    prob_Mimic_v2[0]       = prob_mvs_DSURPS[0, 1]   #  ALWAYS UPGRADE
-    prob_Mimic_v2[1]       = prob_mvs_DSURPS[1, 2]
-    prob_Mimic_v2[2]       = prob_mvs_DSURPS[2, 2]
+    prob_Mimic_v2[0]       = prob_mvsDSURPS[0, 1]   #  ALWAYS UPGRADE
+    prob_Mimic_v2[1]       = prob_mvsDSURPS[1, 2]
+    prob_Mimic_v2[2]       = prob_mvsDSURPS[2, 2]
     pcMimic, pvMimic = _ss.pearsonr(_N.mean(prob_Mimic, axis=0), _N.mean(prob_Mimic_v2, axis=0))
     
     #pc01, pv01 = _ss.pearsonr(prob_Mimic[0], prob_Mimic[1])
@@ -791,9 +792,9 @@ for partID in partIDs:
     prob_Lose[1]       = prob_mvsDSUWTL[1, 0]   #  DN | TIE
     prob_Lose[2]       = prob_mvsDSUWTL[2, 1]   #  ST | LOS
 
-    prob_Beat_v2[0]       = prob_mvs_DSUAIRPS[0, 2]   #  ALWAYS UPGRADE
-    prob_Beat_v2[1]       = prob_mvs_DSUAIRPS[1, 2]
-    prob_Beat_v2[2]       = prob_mvs_DSUAIRPS[2, 2]
+    prob_Beat_v2[0]       = prob_mvsDSUAIRPS[0, 2]   #  ALWAYS UPGRADE
+    prob_Beat_v2[1]       = prob_mvsDSUAIRPS[1, 2]
+    prob_Beat_v2[2]       = prob_mvsDSUAIRPS[2, 2]
     pcBeat, pvBeat = _ss.pearsonr(_N.mean(prob_Beat, axis=0), _N.mean(prob_Beat_v2, axis=0))
     pcBeats[pid-1] = pcBeat
     pcMimics[pid-1] = pcMimic
@@ -870,10 +871,10 @@ for partID in partIDs:
     #stay_amp = _N.array([_N.std(prob_mvs_STSW[0, 0]), _N.std(prob_mvs_STSW[1, 0]), _N.std(prob_mvs_STSW[2, 0])])
 
     ##  
-    pUD_WTL = _N.array([ctprob_mvs[0, 0] + ctprob_mvs[0, 2],
-                        ctprob_mvs[1, 0] + ctprob_mvs[1, 2],
-                        ctprob_mvs[2, 0] + ctprob_mvs[2, 2]])
-    pS_WTL  = _N.array([ctprob_mvs[0, 1], ctprob_mvs[1, 1], ctprob_mvs[2, 1]])
+    pUD_WTL = _N.array([ctprob_mvsDSUWTL[0, 0] + ctprob_mvsDSUWTL[0, 2],
+                        ctprob_mvsDSUWTL[1, 0] + ctprob_mvsDSUWTL[1, 2],
+                        ctprob_mvsDSUWTL[2, 0] + ctprob_mvsDSUWTL[2, 2]])
+    pS_WTL  = _N.array([ctprob_mvsDSUWTL[0, 1], ctprob_mvsDSUWTL[1, 1], ctprob_mvsDSUWTL[2, 1]])
     #entsUD_S = _N.array([entropy3(pUD_WTL.T, PCS),
     #                     entropy3(pS_WTL.T,  PCS)])
 
@@ -883,62 +884,62 @@ for partID in partIDs:
     
     #entsSTSW = _N.array([entropy2(ctprob_mvs[:, 0].T, PCS), entropy3(ctprob_mvs[:, 1].T, PCS), entropy3(ctprob_mvs[:, 2].T, PCS)])
 
-    pW_stsw = _N.array([ctprob_mvs[0, 0] + ctprob_mvs[0, 2], ctprob_mvs[0, 1]])
-    pT_stsw = _N.array([ctprob_mvs[1, 0] + ctprob_mvs[1, 2], ctprob_mvs[1, 1]])
-    pL_stsw = _N.array([ctprob_mvs[2, 0] + ctprob_mvs[2, 2], ctprob_mvs[2, 1]])
+    pW_stsw = _N.array([ctprob_mvsDSUWTL[0, 0] + ctprob_mvsDSUWTL[0, 2], ctprob_mvsDSUWTL[0, 1]])
+    pT_stsw = _N.array([ctprob_mvsDSUWTL[1, 0] + ctprob_mvsDSUWTL[1, 2], ctprob_mvsDSUWTL[1, 1]])
+    pL_stsw = _N.array([ctprob_mvsDSUWTL[2, 0] + ctprob_mvsDSUWTL[2, 2], ctprob_mvsDSUWTL[2, 1]])
 
 
     #  Is TIE like a WIN or TIE like a LOSE?
     #  ENT_WT = entropy of (UP|WIN and UP|TIE) + entropy (DN|WIN and DN|TIE) + entropy (UP|WIN and UP|TIE)
     #  ENT_LT = entropy of (UP|LOS and UP|TIE) + entropy (DN|LOS and DN|TIE) + entropy (UP|LOS and UP|TIE)
-    probU  = _N.empty((2, ctprob_mvs.shape[2]))
-    probD  = _N.empty((2, ctprob_mvs.shape[2]))
-    probS  = _N.empty((2, ctprob_mvs.shape[2]))
-    probU[0] = ctprob_mvs[0, 2]
-    probU[1] = ctprob_mvs[1, 2]
-    probS[0] = ctprob_mvs[0, 1]
-    probS[1] = ctprob_mvs[1, 1]    
-    probD[0] = ctprob_mvs[0, 0]
-    probD[1] = ctprob_mvs[1, 0]    
+    probU  = _N.empty((2, ctprob_mvsDSUWTL.shape[2]))
+    probD  = _N.empty((2, ctprob_mvsDSUWTL.shape[2]))
+    probS  = _N.empty((2, ctprob_mvsDSUWTL.shape[2]))
+    probU[0] = ctprob_mvsDSUWTL[0, 2]
+    probU[1] = ctprob_mvsDSUWTL[1, 2]
+    probS[0] = ctprob_mvsDSUWTL[0, 1]
+    probS[1] = ctprob_mvsDSUWTL[1, 1]    
+    probD[0] = ctprob_mvsDSUWTL[0, 0]
+    probD[1] = ctprob_mvsDSUWTL[1, 0]    
 
     #ENT_WT = entropy2(probU.T, PCS) + entropy2(probS.T, PCS) + entropy2(probD.T, PCS)
     ENT_WT = _aift.entropy2(probS.T, PCS)
-    probU[0] = ctprob_mvs[2, 2]
-    probU[1] = ctprob_mvs[1, 2]
-    probS[0] = ctprob_mvs[2, 1]
-    probS[1] = ctprob_mvs[1, 1]    
-    probD[0] = ctprob_mvs[2, 0]
-    probD[1] = ctprob_mvs[1, 0]    
+    probU[0] = ctprob_mvsDSUWTL[2, 2]
+    probU[1] = ctprob_mvsDSUWTL[1, 2]
+    probS[0] = ctprob_mvsDSUWTL[2, 1]
+    probS[1] = ctprob_mvsDSUWTL[1, 1]    
+    probD[0] = ctprob_mvsDSUWTL[2, 0]
+    probD[1] = ctprob_mvsDSUWTL[1, 0]    
 
     #ENT_LT = entropy2(probU.T, PCS) + entropy2(probS.T, PCS) + entropy2(probD.T, PCS)
     ENT_LT = _aift.entropy2(probS.T, PCS)
     #moresiment[pid-1] = ENT_WT - ENT_LT
     
-    ctprob_mvs[0, 0]
+    ctprob_mvsDSUWTL[0, 0]
     entsWTL2 = _N.array([_aift.entropy2(pW_stsw.T, PCS), _aift.entropy2(pT_stsw.T, PCS), _aift.entropy2(pL_stsw.T, PCS)])
     #entsWTL3 = _N.array([entropy3(ctprob_mvs[0].T, PCS),
     #                     entropy3(ctprob_mvs[1].T, PCS),
     #                     entropy3(ctprob_mvs[2].T, PCS)])
 
     #  most variable probability for each condition
-    mst_var_DSUWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSUWTL, axis=2), axis=1)[:, 2])
-    mst_var_DSURPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSURPS, axis=2), axis=1)[:, 2])
-    mst_var_RPSWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_RPS, axis=2), axis=1)[:, 2])
-    mst_var_DSUAIRPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvs_DSUAIRPS, axis=2), axis=1)[:, 2])
+    mst_var_DSUWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvsDSUWTL, axis=2), axis=1)[:, 2])
+    mst_var_DSURPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvsDSURPS, axis=2), axis=1)[:, 2])
+    mst_var_RPSWTL[pid-1] = _N.max(_N.sort(_N.std(prob_mvsRPSWTL, axis=2), axis=1)[:, 2])
+    mst_var_DSUAIRPS[pid-1] = _N.max(_N.sort(_N.std(prob_mvsDSUAIRPS, axis=2), axis=1)[:, 2])
 
-    probWst = ctprob_mvs[0, 1]
-    probWsw = ctprob_mvs[0, 0] + ctprob_mvs[0, 2]
-    datW    = _N.empty((ctprob_mvs.shape[2], 2))
+    probWst = ctprob_mvsDSUWTL[0, 1]
+    probWsw = ctprob_mvsDSUWTL[0, 0] + ctprob_mvsDSUWTL[0, 2]
+    datW    = _N.empty((ctprob_mvsDSUWTL.shape[2], 2))
     datW[:, 0] = probWst
     datW[:, 1] = probWsw
-    probTst = ctprob_mvs[1, 1]
-    probTsw = ctprob_mvs[1, 0] + ctprob_mvs[1, 2]
-    datT    = _N.empty((ctprob_mvs.shape[2], 2))
+    probTst = ctprob_mvsDSUWTL[1, 1]
+    probTsw = ctprob_mvsDSUWTL[1, 0] + ctprob_mvsDSUWTL[1, 2]
+    datT    = _N.empty((ctprob_mvsDSUWTL.shape[2], 2))
     datT[:, 0] = probTst
     datT[:, 1] = probTsw
-    probLst = ctprob_mvs[2, 1]
-    probLsw = ctprob_mvs[2, 0] + ctprob_mvs[2, 2]
-    datL    = _N.empty((ctprob_mvs.shape[2], 2))
+    probLst = ctprob_mvsDSUWTL[2, 1]
+    probLsw = ctprob_mvsDSUWTL[2, 0] + ctprob_mvsDSUWTL[2, 2]
+    datL    = _N.empty((ctprob_mvsDSUWTL.shape[2], 2))
     datL[:, 0] = probLst
     datL[:, 1] = probLsw
 
@@ -948,20 +949,20 @@ for partID in partIDs:
     # entropySr[pid-1] = entsDSUr[1]
     # entropyUr[pid-1] = entsDSUr[2]
 
-    UD_diff[pid-1, 0] = _N.std(ctprob_mvs[0, 0] - ctprob_mvs[0, 2])
-    UD_diff[pid-1, 1] = _N.std(ctprob_mvs[1, 0] - ctprob_mvs[1, 2])
-    UD_diff[pid-1, 2] = _N.std(ctprob_mvs[2, 0] - ctprob_mvs[2, 2])
+    UD_diff[pid-1, 0] = _N.std(ctprob_mvsDSUWTL[0, 0] - ctprob_mvsDSUWTL[0, 2])
+    UD_diff[pid-1, 1] = _N.std(ctprob_mvsDSUWTL[1, 0] - ctprob_mvsDSUWTL[1, 2])
+    UD_diff[pid-1, 2] = _N.std(ctprob_mvsDSUWTL[2, 0] - ctprob_mvsDSUWTL[2, 2])
 
-    entropyDSUWTL_D[pid-1], entropyDSUWTL_S[pid-1], entropyDSUWTL_U[pid-1] = _aift.entropyCRprobs(prob_mvs, fix="action", normalize=False, PCS=PCS, PCS1=10)
-    entropyDSUWTL_W[pid-1], entropyDSUWTL_T[pid-1], entropyDSUWTL_L[pid-1] = _aift.entropyCRprobs(prob_mvs, fix="condition", normalize=False, PCS1=10)
+    entropyDSUWTL_D[pid-1], entropyDSUWTL_S[pid-1], entropyDSUWTL_U[pid-1] = _aift.entropyCRprobs(prob_mvsDSUWTL, fix="action", normalize=False, PCS=PCS, PCS1=10)
+    entropyDSUWTL_W[pid-1], entropyDSUWTL_T[pid-1], entropyDSUWTL_L[pid-1] = _aift.entropyCRprobs(prob_mvsDSUWTL, fix="condition", normalize=False, PCS1=10)
     
-    entropyRPSWTL_R[pid-1], entropyRPSWTL_S[pid-1], entropyRPSWTL_P[pid-1] = _aift.entropyCRprobs(prob_mvs_RPS, fix="action", normalize=False, PCS=PCS, PCS1=10)
-    entropyDSURPS_D[pid-1], entropyDSURPS_S[pid-1], entropyDSURPS_U[pid-1] = _aift.entropyCRprobs(prob_mvs_DSURPS, fix="action", normalize=False, PCS=PCS, PCS1=10)
+    entropyRPSWTL_R[pid-1], entropyRPSWTL_S[pid-1], entropyRPSWTL_P[pid-1] = _aift.entropyCRprobs(prob_mvsRPSWTL, fix="action", normalize=False, PCS=PCS, PCS1=10)
+    entropyDSURPS_D[pid-1], entropyDSURPS_S[pid-1], entropyDSURPS_U[pid-1] = _aift.entropyCRprobs(prob_mvsDSURPS, fix="action", normalize=False, PCS=PCS, PCS1=10)
 
-    entropyDSUAIRPS_D[pid-1], entropyDSUAIRPS_S[pid-1], entropyDSUAIRPS_U[pid-1] = _aift.entropyCRprobs(prob_mvs_DSUAIRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)    
+    entropyDSUAIRPS_D[pid-1], entropyDSUAIRPS_S[pid-1], entropyDSUAIRPS_U[pid-1] = _aift.entropyCRprobs(prob_mvsDSUAIRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)    
 
-    entropyRPSAIRPS_R[pid-1], entropyRPSAIRPS_S[pid-1], entropyRPSAIRPS_P[pid-1] = _aift.entropyCRprobs(prob_mvs_RPSAIRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)
-    entropyRPSRPS_R[pid-1], entropyRPSRPS_S[pid-1], entropyRPSRPS_P[pid-1] = _aift.entropyCRprobs(prob_mvs_RPSRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)        
+    entropyRPSAIRPS_R[pid-1], entropyRPSAIRPS_S[pid-1], entropyRPSAIRPS_P[pid-1] = _aift.entropyCRprobs(prob_mvsRPSAIRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)
+    entropyRPSRPS_R[pid-1], entropyRPSRPS_S[pid-1], entropyRPSRPS_P[pid-1] = _aift.entropyCRprobs(prob_mvsRPSRPS, fix="action", normalize=False, PCS=PCS, PCS1=10)        
     
     #entropyW2[pid-1] = wtl_independent[0]
     #entropyT2[pid-1] = wtl_independent[1]
@@ -1074,10 +1075,10 @@ for partID in partIDs:
     mn_stayL[pid-1] = _N.std(stayLs) / _N.mean(stayLs)
     #maxs = maxs_DSUWTL
 
-    cntrsDSUWTL[pid-1, 0], cntrsDSUWTL[pid-1, 1] = _aift.cntrmvs_DSUWTL(prob_mvs, TO)
-    cntrsDSURPS[pid-1, 0], cntrsDSURPS[pid-1, 1] = _aift.cntrmvs_DSURPS(prob_mvs_DSURPS, TO)
-    cntrsDSUAIRPS[pid-1, 0], cntrsDSUAIRPS[pid-1, 1] = _aift.cntrmvs_DSUAIRPS(prob_mvs_DSUAIRPS, TO)
-    cntrsRPSWTL[pid-1, 0], cntrsRPSWTL[pid-1, 1] = _aift.cntrmvs_RPSWTL(prob_mvs_RPS, TO)
+    cntrsDSUWTL[pid-1, 0], cntrsDSUWTL[pid-1, 1] = _aift.cntrmvs_DSUWTL(prob_mvsDSUWTL, TO)
+    cntrsDSURPS[pid-1, 0], cntrsDSURPS[pid-1, 1] = _aift.cntrmvs_DSURPS(prob_mvsDSURPS, TO)
+    cntrsDSUAIRPS[pid-1, 0], cntrsDSUAIRPS[pid-1, 1] = _aift.cntrmvs_DSUAIRPS(prob_mvsDSUAIRPS, TO)
+    cntrsRPSWTL[pid-1, 0], cntrsRPSWTL[pid-1, 1] = _aift.cntrmvs_RPSWTL(prob_mvsRPSWTL, TO)
 
     _aift.action_result(_hnd_dat, TO, pid, u_or_d_res, dn_res, up_res, stay_res, u_or_d_tie, stay_tie)
 
