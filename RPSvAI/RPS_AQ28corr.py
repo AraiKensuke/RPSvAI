@@ -3,28 +3,28 @@
 from sklearn import linear_model
 import sklearn.linear_model as _skl
 import numpy as _N
-import AIiRPS.utils.read_taisen as _rt
+import RPSvAI.utils.read_taisen as _rt
 import scipy.io as _scio
 import scipy.stats as _ss
 import matplotlib.pyplot as _plt
-import AIiRPS.utils.read_taisen as _rd
+import RPSvAI.utils.read_taisen as _rd
 from filter import gauKer
 from scipy.signal import savgol_filter
 from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
-import AIiRPS.skull_plot as _sp
+#import RPSvAI.skull_plot as _sp
 import os
 import sys
 import pickle
 import mne.time_frequency as mtf
 from filter import gauKer
 import GCoh.eeg_util as _eu
-import AIiRPS.rpsms as rpsms
+#import RPSvAI.rpsms as rpsms
 
-import AIiRPS.constants as _cnst
-from AIiRPS.utils.dir_util import getResultFN
+import RPSvAI.constants as _cnst
+from RPSvAI.utils.dir_util import workdirFN
 import GCoh.datconfig as datconf
-import AIiRPS.models.CRutils as _crut
-import AIiRPS.models.empirical as _emp
+import RPSvAI.models.CRutils as _crut
+import RPSvAI.models.empirical_ken as _emp
 
 import GCoh.eeg_util as _eu
 import matplotlib.ticker as ticker
@@ -264,7 +264,7 @@ def rm_outliersCC(x, y):
 
 win_type = 2   #  window is of fixed number of games
 #win_type = 1  #  window is of fixed number of games that meet condition 
-win     = 3
+win     = 6
 smth    = 1
 visit   = 1
 #label          = win_type*100+win*10+smth
@@ -272,8 +272,9 @@ visit   = 1
 outdir = "Results_%(wt)d%(w)d%(s)d" % {"wt" : win_type, "w" : win, "s" : smth}
 if not os.access(outdir, os.F_OK):
     os.mkdir(outdir)
-        
-lm = depickle("predictAQ28dat/AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth})
+
+lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
+#lm = depickle("predictAQ28dat/AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth})
 
 # features_cab1 = lm["features_cab1"]
 # features_cab2 = lm["features_cab2"]
@@ -546,7 +547,8 @@ if look_at_AQ:
         _plt.close()
 
 data_dmp = {"cmp_againsts" : cmp_againsts, "pcpvs" : pcpvs}
-dmpout = open("predictAQ28dat/AQ28_vs_RPScorr_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth, "v" : visit}, "wb")
+
+dmpout = open(workdirFN("AQ28_vs_RPScorr_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth, "v" : visit}), "wb")
 pickle.dump(data_dmp, dmpout, -1)
 dmpout.close()
 

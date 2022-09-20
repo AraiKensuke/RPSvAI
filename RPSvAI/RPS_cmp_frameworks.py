@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 from sklearn import linear_model
 import sklearn.linear_model as _skl
 import numpy as _N
@@ -11,7 +12,7 @@ import RPSvAI.utils.read_taisen as _rd
 import RPSvAI.utils.misc as _Am
 from scipy.signal import savgol_filter
 from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
-from RPSvAI.utils.dir_util import workdirFN
+from RPSvAI.utils.dir_util import workdirFN, datadirFN
 import os
 import sys
 from sumojam.devscripts.cmdlineargs import process_keyval_args
@@ -31,6 +32,7 @@ import RPSvAI.AIRPSfeatures as _aift
 
 import GCoh.eeg_util as _eu
 import matplotlib.ticker as ticker
+from statsmodels import robust
 
 __DSUWTL__ = 0
 __RPSWTL__ = 1
@@ -41,7 +43,7 @@ mode       = __ALL__
 #mode       = __DSUWTL__
 #mode       = __RPSWTL__
 #mode       = __DSURPS__
-
+_plt.ioff()
 __1st__ = 0
 __2nd__ = 1
 
@@ -135,7 +137,7 @@ def only_complete_data(partIDs, TO, label, SHF_NUM):
         dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
         _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM]
         _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM]
-        _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
+        #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
         __hnd_dat = dmp["all_tds"][SHF_NUM]
         _hnd_dat   = __hnd_dat[0:TO]
 
@@ -160,6 +162,7 @@ thrI = 1
 nI=1
 r1=0.4
 
+#_plt.ioff()
 process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
 
 #visit = 2
@@ -206,6 +209,8 @@ elif expt == "SIMHUM1":
         TO = 1000
 
 filtdat = lm["filtdat"]
+
+
 #filtdat = _N.array([8])
     
 partIDs, incmp_dat = only_complete_data(partIDs, TO, label, SHF_NUM)
@@ -214,7 +219,7 @@ TO -= strtTr
 
 #fig= _plt.figure(figsize=(14, 14))
 
-SHUFFLES = 0
+SHUFFLES = 205
 extra_w = 2
 t0 = -5 - extra_w
 t1 = 10 + extra_w
@@ -277,12 +282,11 @@ gkISI /= _N.sum(gkISI)
 #  look for SR SS SP
 #  look for PR PS PP
 
-
 L30  = 30
 
 rc_trg_avg = _N.empty((len(partIDs), t1-t0, SHUFFLES+1))
 rc_trg_avg_RPS = _N.empty((len(partIDs), t1-t0, SHUFFLES+1))
-rc_trg_avg_DSURPS = _N.empty((len(partIDs), t1-t0, SHUFFLES+1))
+#rc_trg_avg_DSURPS = _N.empty((len(partIDs), t1-t0, SHUFFLES+1))
 
 chg = _N.empty(len(partIDs))
 
@@ -299,127 +303,381 @@ thrs = _N.empty(len(partIDs), dtype=_N.int)
 #stdsRPSWTL      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
 #stdsDSURPS      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
 
-winlosses       = _N.empty((len(partIDs), 2))
 marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 
 sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
 sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
 sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
-sumdetDSUWTL = _N.empty(len(partIDs))
-sumdetRPSWTL = _N.empty(len(partIDs))
-sumdetRPSAIRPS = _N.empty(len(partIDs))
-sumdetRPSRPS = _N.empty(len(partIDs))
-sumdetDSUAIRPS = _N.empty(len(partIDs))
+frameworks = ["DSUWTL", "RPSWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
+frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", "p(RPS | RPS)"]
+
+#frameworks = ["DSUWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
+#frameworks = ["DSUWTL", "RPSRPS"]
+
+caksDSUWTL = _N.empty(len(partIDs))
+caksRPSWTL = _N.empty(len(partIDs))
+caksRPSRPS = _N.empty(len(partIDs))
+caksRPSAIRPS = _N.empty(len(partIDs))
+caksDSUAIRPS = _N.empty(len(partIDs))
+par        = _N.empty((len(partIDs), 5))
+pick_acts        = _N.empty((len(partIDs), 5))
+avoid_acts        = _N.empty((len(partIDs), 5))
+
+z1s        = _N.empty((len(partIDs), 5))
+z0s        = _N.empty((len(partIDs), 5))
+rank       = _N.empty((len(partIDs), 5), dtype=_N.int)
+cmp_z1s    = _N.empty((len(partIDs), 5, 3, 3))
+cmp_z1sZ   = _N.empty((len(partIDs), 5, 3, 3))
+fr_cmp_fluc_rank1       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
+fr_cmp_rank0       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
+fr_cmp_lohi_rank       = _N.zeros((len(partIDs), 5, 3, 3), dtype=_N.int)
+
+CCs        = _N.empty((len(partIDs), 5, 5))
+
+hi_allpcs     = []
+mid_allpcs     = []
+lo_allpcs     = []
+iex = 1
 for partID in partIDs:
     pid += 1
-    dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/WTL_%(v)d.dmp" % {"rpsm" : partID, "lb" : label, "v" : visit}))
+    print(pid)
+    dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(v)d.dmp" % {"rpsm" : partID, "lb" : label, "v" : visit}))
 
-    #if expt == "TMB2":
-    #    AQ28scrs[pid-1], soc_skils[pid-1], rout[pid-1], switch[pid-1], imag[pid-1], fact_pat[pid-1] = _rt.AQ28("/Users/arai/Sites/taisen/DATA/%(data)s/%(date)s/%(pID)s/AQ29.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : expt})
+    if expt == "TMB2":
+        AQ28scrs[pid-1], soc_skils[pid-1], rout[pid-1], switch[pid-1], imag[pid-1], fact_pat[pid-1] = _rt.AQ28(datadirFN("%(data)s/%(date)s/%(pID)s/AQ29.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : expt}))
 
     _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][:, :, strtTr:]
     _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][:, strtTr:]
-    _prob_mvsDSURPS = dmp["cond_probsDSURPS"][:, strtTr:]
+    #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][:, strtTr:]
     _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][:, strtTr:]
     _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][:, strtTr:]
     _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][:, strtTr:]        
     prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, :, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, :, 0:TO - win]  #  is bigger than hand by win size
-    prob_mvsDSURPS  = _prob_mvsDSURPS[:, :, 0:TO - win]  #  is bigger than hand by win size
+    #prob_mvsDSURPS  = _prob_mvsDSURPS[:, :, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, :, 0:TO - win]  #  is bigger than hand by win size    
     prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, :, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, :, 0:TO - win]  #  is bigger than hand by win size    
 
     #stds_all_mdls[0] = _N.std(prob_mvs, axis=2)
+
+    N = 300 - win
+    near1DSUWTL = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near1RPSWTL = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near1RPSAIRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near1RPSRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near1DSUAIRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near0DSUWTL = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near0RPSWTL = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near0RPSAIRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near0RPSRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
+    near0DSUAIRPS = _N.zeros((SHUFFLES+1, N), dtype=_N.int)
     
-    for SHF_NUM in range(SHUFFLES+1):
-    #for SHF_NUM in range(70, 71):
-        _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM][:, strtTr:]
-        _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM][:, strtTr:]
-        _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM][:, strtTr:]
-        _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][SHF_NUM][:, strtTr:]
-        _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][SHF_NUM][:, strtTr:]
-        _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][SHF_NUM][:, strtTr:]
+    # for SHF_NUM in range(0, SHUFFLES+1):
+    #     _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM][:, strtTr:]
+    #     _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM][:, strtTr:]
+    #     _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM][:, strtTr:]
+    #     _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][SHF_NUM][:, strtTr:]
+    #     _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][SHF_NUM][:, strtTr:]
+    #     _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][SHF_NUM][:, strtTr:]
 
-        #_prob_mvs_STSW = dmp["cond_probsSTSW"][SHF_NUM][:, strtTr:]    
-        _hnd_dat = dmp["all_tds"][SHF_NUM][strtTr:]
+    #     #_prob_mvs_STSW = dmp["cond_probsSTSW"][SHF_NUM][:, strtTr:]    
+    #     _hnd_dat = dmp["all_tds"][SHF_NUM][strtTr:]
         
-        #end_strts[pid-1] = _N.mean(_hnd_dat[-1, 3] - _hnd_dat[0, 3])
-        winlosses[pid-1, 0] = len(_N.where(_hnd_dat[:, 2] == 1)[0])
-        winlosses[pid-1, 1] = len(_N.where(_hnd_dat[:, 2] == -1)[0])        
-        hdcol = 0
+    #     #end_strts[pid-1] = _N.mean(_hnd_dat[-1, 3] - _hnd_dat[0, 3])
+    #     hdcol = 0
 
-        inds =_N.arange(_hnd_dat.shape[0])
-        hnd_dat_all[pid-1] = _hnd_dat[0:TO]
+    #     inds =_N.arange(_hnd_dat.shape[0])
+    #     hnd_dat_all[pid-1] = _hnd_dat[0:TO]
 
-        cv_sum = 0
-        dhd = _N.empty(TO)
-        dhd[0:TO-1] = _N.diff(_hnd_dat[0:TO, 3])
-        dhd[TO-1] = dhd[TO-2]
-        #dhdr = dhd.reshape((20, 15))
-        #rsp_tms_cv[pid-1] = _N.mean(_N.std(dhdr, axis=1) / _N.mean(dhdr, axis=1))
+    #     cv_sum = 0
+    #     dhd = _N.empty(TO)
+    #     dhd[0:TO-1] = _N.diff(_hnd_dat[0:TO, 3])
+    #     dhd[TO-1] = dhd[TO-2]
+    #     #dhdr = dhd.reshape((20, 15))
+    #     #rsp_tms_cv[pid-1] = _N.mean(_N.std(dhdr, axis=1) / _N.mean(dhdr, axis=1))
 
-        #rsp_tms_cv[pid-1] = _N.std(_hnd_dat[:, 3]) / _N.mean(_hnd_dat[:, 3])
-        #marginalCRs[pid-1] = _emp.marginalCR(_hnd_dat)
-        prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsDSURPS  = _prob_mvsDSURPS[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, 0:TO - win]  #  is bigger than hand by win size                        
-        #prob_mvs_STSW  = _prob_mvs_STSW[:, 0:TO - win]  #  is bigger than hand by win size    
-        prob_mvsDSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
-        prob_mvsRPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
-        prob_mvsDSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
-        prob_mvsDSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))        
-        prob_mvsRPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))
-        prob_mvsRPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))        
+    #     #rsp_tms_cv[pid-1] = _N.std(_hnd_dat[:, 3]) / _N.mean(_hnd_dat[:, 3])
+    #     #marginalCRs[pid-1] = _emp.marginalCR(_hnd_dat)
+    #     prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, 0:TO - win]  #  is bigger than hand by win size
+    #     prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, 0:TO - win]  #  is bigger than hand by win size
+    #     prob_mvsDSURPS  = _prob_mvsDSURPS[:, 0:TO - win]  #  is bigger than hand by win size
+    #     prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, 0:TO - win]  #  is bigger than hand by win size
+    #     prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, 0:TO - win]  #  is bigger than hand by win size
+    #     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, 0:TO - win]  #  is bigger than hand by win size                        
+    #     #prob_mvs_STSW  = _prob_mvs_STSW[:, 0:TO - win]  #  is bigger than hand by win size    
+    #     prob_mvsDSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
+    #     prob_mvsRPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
+    #     prob_mvsDSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
+    #     prob_mvsDSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))        
+    #     prob_mvsRPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))
+    #     prob_mvsRPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))        
 
-        #marginalCRs[pid-1, SHF_NUM] = _emp.marginalCR(_hnd_dat)
-        N = prob_mvsDSUWTL.shape[2]
+    #     ##  what we really mean here is that for each condition, 
+    #     ##  
+    #     thr1 = 0.6
+    #     thr2 = 0.1
 
-        sum_deterministicDSUWTL = _N.zeros((3, 3), dtype=_N.int)        
-        sum_deterministicRPSWTL = _N.zeros((3, 3), dtype=_N.int)        
-        sum_deterministicRPSAIRPS = _N.zeros((3, 3), dtype=_N.int)        
-        sum_deterministicDSUAIRPS = _N.zeros((3, 3), dtype=_N.int)        
-        sum_deterministicRPSRPS = _N.zeros((3, 3), dtype=_N.int)        
+    #     ifr = -1
+    #     for frmwk in frameworks:
+    #         ifr += 1
+    #         exec("prob_mvs = prob_mvs%s" % frmwk)
+    #         exec("near1 = near1%s" % frmwk)
+    #         exec("near0 = near0%s" % frmwk)
+
+    #         for game in range(prob_mvs.shape[2]):
+    #             conditional_action_known = 0
+    #             conditional_action_not_taken = 0
+    #             for ic in range(3):
+    #                 knowNextMove = _N.where(prob_mvs[ic, :, game] > thr1)[0]
+    #                 if len(knowNextMove) > 0:
+    #                     conditional_action_known += 1
+    #                     near1[SHF_NUM, game] = conditional_action_known
+    #             for ic in range(3):
+    #                 notNextMove = _N.where(prob_mvs[ic, :, game] < thr2)[0]
+    #                 if len(notNextMove) == 1:
+    #                     conditional_action_not_taken += 1
+    #                     near0[SHF_NUM, game] = conditional_action_not_taken
 
 
-        for game in range(prob_mvsDSUWTL.shape[2]):
+    # # frames = ["DSUWTL", "RPSWTL", "RPSRPS", "DSUAIRPS", "RPSAIRPS"]
+    # # for if1 in range(5):
+    # #     exec("near1_1 = near1%s[0]" % frames[if1])
+    # #     for if2 in range(if1+1, 5):
+    # #         exec("near1_2 = near1%s[0]" % frames[if2])
+    # #         pc, pv = _ss.pearsonr(near1_1, near1_2)
+    # #         print("%(f1)s  %(f2)s    %(pc).3e" % {"f1" : frames[if1], "f2" : frames[if2], "pc" : pc})
+    # #         CCs[pid-1, if1, if2] = pc
+    # #         CCs[pid-1, if2, if1] = pc
 
-            for ic in range(3):
-                for ia in range(3):
-                    if (prob_mvsDSUWTL[ic, ia, game] > 0.9) or (prob_mvsDSUWTL[ic, ia, game] < 0.1):
-                        sum_deterministicDSUWTL[ic, ia] += 1
-                    if (prob_mvsRPSWTL[ic, ia, game] > 0.9) or (prob_mvsRPSWTL[ic, ia, game] < 0.1):
-                        sum_deterministicRPSWTL[ic, ia] += 1
-                    if (prob_mvsRPSAIRPS[ic, ia, game] > 0.9) or (prob_mvsRPSAIRPS[ic, ia, game] < 0.1):
-                        sum_deterministicRPSAIRPS[ic, ia] += 1
-                    if (prob_mvsRPSRPS[ic, ia, game] > 0.9) or (prob_mvsRPSRPS[ic, ia, game] < 0.1):
-                        sum_deterministicRPSRPS[ic, ia] += 1
-                    if (prob_mvsDSUAIRPS[ic, ia, game] > 0.9) or (prob_mvsDSUAIRPS[ic, ia, game] < 0.1):
-                        sum_deterministicDSUAIRPS[ic, ia] += 1
+    # #fig = _plt.figure(figsize=(8, 8))
+    # ifr = -1
+    # bins=_N.linspace(0, 3, 31)
+    # for frmwk in frameworks:
+    #     ifr += 1
+    #     #fig.add_subplot(4, 3, ifr+1)
+    #     exec("near1 = near1%s" % frmwk)
+    #     sums = _N.mean(near1, axis=1)
+    #     #_plt.title(frmwk)
+    #     #_plt.hist(sums[1:], bins=bins)
+    #     #_plt.axvline(x=sums[0])
+    #     z1s[pid-1, ifr] = (sums[0] - _N.mean(sums[1:])) / _N.std(sums[1:])
+    #     srtd = _N.sort(sums[1:])
+    #     rank[pid-1, ifr] = len(_N.where(sums[0] > srtd)[0])
+    # ifr = -1
+    # for frmwk in frameworks:
+    #     ifr += 1
+    #     #fig.add_subplot(4, 3, 6+ifr+1)
+    #     exec("near0 = near0%s" % frmwk)
+    #     sums = _N.mean(near0, axis=1)
+    #     sin = "**" if len(_N.where(filtdat == pid-1)[0]) > 0 else "  "
+    #     #_plt.title("%(f)s   %(p)s" % {"f" : frmwk, "p" : sin})
+    #     #_plt.hist(sums[1:], bins=bins)
+    #     #_plt.axvline(x=sums[0])
+    #     z0s[pid-1, ifr] = (sums[0] - _N.mean(sums[1:])) / _N.std(sums[1:])
+    # #_plt.savefig("cmp_frameworks%d" % (pid-1))
+    # #_plt.close()
 
-        print("%(DSUWTL)d  %(RPSWTL)d  %(RPSAIRPS)d" % {"DSUWTL" : _N.sum(sum_deterministicDSUWTL), "RPSWTL" : _N.sum(sum_deterministicRPSWTL), "RPSAIRPS" : _N.sum(sum_deterministicRPSAIRPS)})
-        sumdetDSUWTL[pid-1] = _N.sum(sum_deterministicDSUWTL)
-        sumdetRPSRPS[pid-1] = _N.sum(sum_deterministicRPSRPS)
-        sumdetRPSWTL[pid-1] = _N.sum(sum_deterministicRPSWTL)
-        sumdetRPSAIRPS[pid-1] = _N.sum(sum_deterministicRPSAIRPS)
-        sumdetDSUAIRPS[pid-1] = _N.sum(sum_deterministicDSUAIRPS)
+    allDSUWTLs = dmp["cond_probsDSUWTL"].reshape((SHUFFLES+1, 3, 3, 300-win))
+    allRPSWTLs = dmp["cond_probsRPSWTL"].reshape((SHUFFLES+1, 3, 3, 300-win))
+    allRPSRPSs = dmp["cond_probsRPSRPS"].reshape((SHUFFLES+1, 3, 3, 300-win))
+    allRPSAIRPSs = dmp["cond_probsRPSAIRPS"].reshape((SHUFFLES+1, 3, 3, 300-win))
+    allDSUAIRPSs = dmp["cond_probsDSUAIRPS"].reshape((SHUFFLES+1, 3, 3, 300-win))
 
-frameworks = ["DSUWTL", "RPSWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
-for fr1 in range(5):
-    for fr2 in range(5):
-        pr1 = frameworks[fr1]
-        pr2 = frameworks[fr2]
-        if fr1 > fr2:
-            exec("sums1 = sumdet%s" % pr1)
-            exec("sums2 = sumdet%s" % pr2)
-            fig = _plt.figure()
-            _plt.scatter(sums1, sums2)
-            _plt.plot([300, 1400], [300, 1400])
-            _plt.xlabel(pr1)
-            _plt.ylabel(pr2)
+    ifr = -1
+    print("----------------    %d" % pid)
+
+    hi_rnk_cmpts = [[], [], [], [], []]
+    mid_rnk_cmpts = [[], [], [], [], []]
+    lo_rnk_cmpts = [[], [], [], [], []]
+
+    for frmwk in frameworks:
+        ifr += 1
+        exec("alls = dmp['cond_probs%(fr)s'].reshape((%(shfp1)d, 3, 3, %(N)d))" % {"fr" : frmwk, "shfp1" : (SHUFFLES+1), "N" : (300-win)})
+        print(frmwk)
+
+        for ic in range(3):
+            for ia in range(3):
+                stds = _N.std(alls[:, ic, ia], axis=1)
+                #stds = robust.mad(alls[:, ic, ia], axis=1)
+
+                #cmp_z1s[pid-1, ifr, ic, ia] = (stds[0] - _N.mean(stds[1:])) / _N.std(stds[1:])
+                #cmp_z1sZ[pid-1, ifr, ic, ia] = (stds[0] - _N.median(stds[1:])) / _N.std(stds[1:])
+                cmp_z1sZ[pid-1, ifr, ic, ia] = stds[0] / _N.median(stds[1:])
+                cmp_z1s[pid-1, ifr, ic, ia] = stds[0]
+                rnk1 = len(_N.where(stds[0] > stds[1:])[0])
+                #rnk1 = len(_N.where(stds[1] > stds[2:])[0])
+                fr_cmp_fluc_rank1[pid-1, ifr, ic, ia] = rnk1
+                print("%(c)d %(a)d   %(r)d" % {"c" : ic, "a" : ia, "r" : rnk1})
+                if rnk1 / SHUFFLES < 0.3:
+                    lo_rnk_cmpts[ifr].append(_N.array(alls[0, ic, ia]))
+                elif rnk1 / SHUFFLES > 0.9:
+                    hi_rnk_cmpts[ifr].append(_N.array(alls[0, ic, ia]))
+                elif (rnk1 / SHUFFLES) > 0.4 and (rnk1 / SHUFFLES) < 0.85:
+                    mid_rnk_cmpts[ifr].append(_N.array(alls[0, ic, ia]))
+
+                # if rnk1/SHUFFLES > 0.995:
+                #     fig = _plt.figure(figsize=(13, 2.5))
+                #     for i in range(1, SHUFFLES, 20):
+                #         _plt.plot(alls[i, ic, ia], color="grey")
+                #     _plt.plot(alls[0, ic, ia], color="black", lw=3)
+                #     _plt.suptitle("%(pid)s  fr %(fr)s %(c)d %(a)d" % {"pid" : partID, "fr" : frmwk, "c" : ic, "a" : ia})
+                #     _plt.savefig("example%d.png" % iex)
+                #     _plt.close()
+                #     iex += 1
+
+    ifr1 = -1
+    for frmwk1 in frameworks:
+        ifr1 += 1
+        lo_ifLen1  = len(lo_rnk_cmpts[ifr1])
+        mid_ifLen1  = len(mid_rnk_cmpts[ifr1])
+        hi_ifLen1  = len(hi_rnk_cmpts[ifr1])
+        ifr2 = -1
+        for frmwk2 in frameworks:
+            pcs_4_frmwk_pair = []
+            ifr2 += 1
+            lo_ifLen2  = len(lo_rnk_cmpts[ifr2])   # number of cmpts
+            mid_ifLen2  = len(mid_rnk_cmpts[ifr2])   # number of cmpts
+            hi_ifLen2  = len(hi_rnk_cmpts[ifr2])   # number of cmpts
+            if ifr1 < ifr2:
+                for ifi1 in range(hi_ifLen1):
+                    for ifi2 in range(hi_ifLen2):
+                        pc, pv = _ss.pearsonr(hi_rnk_cmpts[ifr1][ifi1], hi_rnk_cmpts[ifr2][ifi2])
+                        hi_allpcs.append(pc)
+                for ifi1 in range(lo_ifLen1):
+                    for ifi2 in range(lo_ifLen2):
+                        pc, pv = _ss.pearsonr(lo_rnk_cmpts[ifr1][ifi1], lo_rnk_cmpts[ifr2][ifi2])
+                        lo_allpcs.append(pc)
+                for ifi1 in range(mid_ifLen1):
+                    for ifi2 in range(mid_ifLen2):
+                        pc, pv = _ss.pearsonr(mid_rnk_cmpts[ifr1][ifi1], mid_rnk_cmpts[ifr2][ifi2])
+                        mid_allpcs.append(pc)
+
             
-            _plt.savefig("%(f1)s_%(f2)s_cmp_framwork" % {"f1" : pr1, "f2" : pr2})
+            #print(_N.mean(pcs_4_frmwk_pair))
+                    
+            
+        
+
+        # for ic in range(3):
+        #     for ia in range(3):
+        #         lens1 = _N.zeros(SHUFFLES+1, dtype=_N.int)
+        #         lens0 = _N.zeros(SHUFFLES+1, dtype=_N.int)
+        #         for shf in range(SHUFFLES+1):
+        #             lens1[shf] = len(_N.where(alls[shf, ic, ia] > thr1)[0])
+        #             lens0[shf] = len(_N.where(alls[shf, ic, ia] < thr2)[0])
+        #         srtd1 = _N.sort(lens1[1:])
+        #         srtd0 = _N.sort(lens0[1:])
+        #         rnk1 = len(_N.where(lens1[0] > srtd1)[0])
+        #         rnk0 = len(_N.where(lens0[0] > srtd0)[0])
+        #         fr_cmp_fluc_rank1[pid-1, ifr, ic, ia]       = rnk1
+        #         fr_cmp_rank0[pid-1, ifr, ic, ia]       = rnk0
+        # conds1, acts1 = _N.where(fr_cmp_fluc_rank1[pid-1, ifr] > 90)
+        # conds0, acts0 = _N.where(fr_cmp_rank0[pid-1, ifr] > 90)
+
+        # ca1     = _N.empty((conds1.shape[0], 2), dtype=_N.int)
+        # ca1[:, 0] = conds1
+        # ca1[:, 1] = acts1
+        # ca0     = _N.empty((conds0.shape[0], 2), dtype=_N.int)
+        # ca0[:, 0] = conds0
+        # ca0[:, 1] = acts0
+        # for i1 in range(ca1.shape[0]):
+        #     for i0 in range(ca0.shape[0]):
+        #         if (ca1[i1, 0] == ca0[i0, 0]) and (ca1[i1, 1] == ca0[i0, 1]):
+        #             #print(ca1[i1])
+        #             #print(ca0[i0])
+        #             #both_big_swing.append(ca1[i1])
+        #             fr_cmp_lohi_rank[pid-1, ifr, ca1[i1, 0], ca1[i1, 1]] = 1
+        
+        #             # if conds1 = [0, 0, 2, 2], acts1 = [0, 1, 0, 1]
+        #             # and
+        #             #    conds2 = [0, 0, 2, 2], acts1 = [0, 2, 0, 2]
+        #             #  Then [0, 0] and [2, 0] are the components where both near cond prob 0 and cond prob 1 occur 
+        
+
+
+dmpout = open("out", "wb")
+pickle.dump({"z1s" : z1s, "fr_cmp_fluc_rank1" : fr_cmp_fluc_rank1, "filtdat" : filtdat, "SHUFFLES" : SHUFFLES}, dmpout, -1)
+dmpout.close()
+
+#SHUFFLES = SHUFFLES-1
+
+
+for i in range(filtdat.shape[0]):
+    _plt.plot(fr_cmp_fluc_rank1[filtdat[i], 0, 2], color="black")
+
+
+for ic in range(3):
+    ones_kys = {}
+    for i in range(filtdat.shape[0]):
+        key = str(_N.where(fr_cmp_fluc_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
+        try:
+            ones_kys[key] += 1
+        except KeyError:
+            ones_kys[key] =  1
+    print(ones_kys)
+
+
+for ic in range(3):
+    ones_kys = {}
+    for i in range(filtdat.shape[0]):
+        key = str(_N.where(fr_cmp_fluc_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
+        try:
+            ones_kys[key] += 1
+        except KeyError:
+            ones_kys[key] =  1
+    print(ones_kys)
+
+
+#  how many cond_prob components have big amplitude
+fig = _plt.figure(figsize=(10, 6.5))
+_plt.suptitle("# of big fluctuation components", fontsize=14)
+for ifr in range(5):
+    fig.add_subplot(5, 1, ifr+1)
+    ipt, icn, iac = _N.where(fr_cmp_fluc_rank1[filtdat, ifr] > int(0.95*SHUFFLES))
+    cnts, bins, lns  = _plt.hist(ipt, bins=_N.linspace(-0.5, 188.5, 190), color="black")
+    _plt.ylim(0, 7)
+    _plt.xlim(-1.5, len(filtdat)+0.5)
+    _plt.title("Framework %s" % frameworks_p[ifr], fontsize=11)
+    _plt.yticks([0, 3, 6], fontsize=11)
+    _plt.xticks(fontsize=11)
+_plt.xlabel("participant #", fontsize=14)
+fig.subplots_adjust(wspace=0.5, hspace=0.85, top=0.85, left=0.08, right=0.94)
+_plt.savefig("Num_of_frameworks_comps_big_%d" % win)
+    
+for ifr in range(5):
+    print("--------   %s" % frameworks[ifr])
+    for ic in range(3):
+        for ia in range(3):
+            print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
+            for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
+                exec("tar = %s" % star)
+                pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
+                #pc, pv = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
+                print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
+
+
+
+fig = _plt.figure(figsize=(12, 3))
+fig.add_subplot(1, 3, 1)
+_plt.hist(lo_allpcs, bins=_N.linspace(-1, 1, 51), color="grey", edgecolor="grey", density=True)
+_plt.title("components w/ small fluctuation")
+_plt.grid(ls=":", color="black")
+_plt.axvline(x=0, color="black", ls="--")
+_plt.xlabel("correlation")
+fig.add_subplot(1, 3, 2)
+_plt.title("components w/ medium fluctuation")
+_plt.hist(mid_allpcs, bins=_N.linspace(-1, 1, 51), color="grey", edgecolor="grey", density=True)
+_plt.grid(ls=":", color="black")
+_plt.axvline(x=0, color="black", ls="--")
+_plt.xlabel("correlation")
+fig.add_subplot(1, 3, 3)
+_plt.title("components w/ large fluctuation")
+_plt.hist(hi_allpcs, bins=_N.linspace(-1, 1, 51), color="grey", edgecolor="grey", density=True)
+_plt.grid(ls=":", color="black")
+_plt.axvline(x=0, color="black", ls="--")
+_plt.xlabel("correlation")
+fig.subplots_adjust(bottom=0.17)
+_plt.savefig("Framework_correlations")
+

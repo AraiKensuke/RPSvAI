@@ -124,7 +124,7 @@ def only_complete_data(partIDs, TO, label, SHF_NUM):
         dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
         _prob_mvs = dmp["cond_probsDSUWTL"][SHF_NUM]
         _prob_mvsRPS = dmp["cond_probsRPSWTL"][SHF_NUM]
-        _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
+        #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
         __hnd_dat = dmp["all_tds"][SHF_NUM]
         _hnd_dat   = __hnd_dat[0:TO]
 
@@ -568,10 +568,12 @@ for partID in partIDs:
     dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
     _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM]
     _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM]
-    _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
     _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][SHF_NUM][:, strtTr:]
     _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][SHF_NUM][:, strtTr:]
+    _prob_mvsDSURPS = _N.array(_prob_mvsRPSRPS)
+    _prob_mvsDSURPS[_N.array([0, 1, 2, 3, 4, 5, 6, 7, 8])] = _prob_mvsRPSRPS[_N.array([2, 1, 0, 3, 4, 5, 7, 8, 6])]
     _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][SHF_NUM][:, strtTr:]    
+
     amp1 = amplitude_ts1(_prob_mvsDSUWTL, 24)
     amp2 = amplitude_ts1(_prob_mvsRPSWTL, 24)
     amp3 = amplitude_ts1(_prob_mvsDSURPS, 24)
@@ -580,7 +582,7 @@ for partID in partIDs:
     amp6 = amplitude_ts1(_prob_mvsRPSAIRPS, 24)            
     near0_1[pid-1], near13_1[pid-1], near1_1[pid-1] = t_near13(_prob_mvsDSUWTL)
     near0_2[pid-1], near13_2[pid-1], near1_2[pid-1] = t_near13(_prob_mvsRPSWTL)
-    near0_3[pid-1], near13_3[pid-1], near1_3[pid-1] = t_near13(_prob_mvsDSURPS)
+    #near0_3[pid-1], near13_3[pid-1], near1_3[pid-1] = t_near13(_prob_mvsDSURPS)
     near0_4[pid-1], near13_4[pid-1], near1_4[pid-1] = t_near13(_prob_mvsDSUAIRPS)    
 
     ccAMPS12[pid-1], pv = _ss.pearsonr(amp1, amp2)
@@ -656,7 +658,7 @@ for partID in partIDs:
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSURPS, prob_mvs_RPS, prob_mvs], None, equalize=False, weight=False)
     #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_RPS, prob_mvs_DSUAIRPS], None, biggest=True, top_comps=4)
 
-    dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvsDSURPS, prob_mvsDSUAIRPS, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
+    dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvsDSUAIRPS, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
     maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
     
     
@@ -763,7 +765,6 @@ for partID in partIDs:
     prob_Mimic[1]      = prob_mvsDSUWTL[1, 1]   #  ST | TIE
     prob_Mimic[2]      = prob_mvsDSUWTL[2, 2]   #  UP | LOS
 
-
     mimic_mean[pid-1]  =     len(_N.where(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])[0])#_N.mean(prob_mvs[0, 0]) + _N.mean(prob_mvs[1, 1]) + _N.mean(prob_mvs[2, 2])
     beat_mean[pid-1]  =     len(_N.where(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])[0])#_N.mean(prob_mvs[0, 0]) + _N.mean(prob_mvs[1, 1]) + _N.mean(prob_mvs[2, 2])    
 
@@ -797,7 +798,7 @@ for partID in partIDs:
     prob_Beat_v2[2]       = prob_mvsDSUAIRPS[2, 2]
     pcBeat, pvBeat = _ss.pearsonr(_N.mean(prob_Beat, axis=0), _N.mean(prob_Beat_v2, axis=0))
     pcBeats[pid-1] = pcBeat
-    pcMimics[pid-1] = pcMimic
+    #pcMimics[pid-1] = pcMimic
     
     #prob_mvs_r = prob_mvs.reshape(9, prob_mvs.shape[2])
     pc01, pv01 = _ss.pearsonr(prob_Beat[0], prob_Beat[1])
@@ -1217,23 +1218,24 @@ scale = 0.3
 #sum_sd_RPSWTL = sum_sd_RPSWTL / s2 + scale*(near2 / n2)
 #sum_sd_DSUAIRPS = sum_sd_DSUAIRPS / s4 + scale*(near4 / n4)
 feats_FCx = ["sum_sd_DSUWTL", "sum_sd_DSUAIRPS", "sum_sd_RPSWTL",
-             "DSUWTL_corrs", "DSUAIRPS_corrs", "RPSWTL_corrs", "cntrmvs_DSUWTL", "cntrmvs_DSUAIRPS", "cntrmvs_RPSWTL", "cntrmvs_DSURPS",
+             "DSUWTL_corrs", "DSUAIRPS_corrs", "RPSWTL_corrs", "RPSRPS_corrs", "RPSAIRPS_corrs", "cntrmvs_DSUWTL", "cntrmvs_DSUAIRPS", "cntrmvs_RPSWTL", "cntrmvs_DSURPS",
 #feats_FCx = ["sum_sd_DSUWTL", "sum_sd_DSURPS", "sum_sd_RPSWTL",
 #             "DSURPS_corrs", "DSUWTL_corrs", "RPSWTL_corrs", "cntrmvs_DSUWTL", "cntrmvs_DSUAIRPS", "cntrmvs_RPSWTL",
              "cntrmvsDIFF",
              "entropyRPSRPS_R", "entropyRPSRPS_S", "entropyRPSRPS_P",
              "entropyRPSAIRPS_R", "entropyRPSAIRPS_S", "entropyRPSAIRPS_P",
              "entropyDSUWTL_D", "entropyDSUWTL_S", "entropyDSUWTL_U",
-             "entropyDSUAIRPS_D", "entropyDSUAIRPS_S", "entropyDSUAIRPS_U", "entropyDSURPS_D", "entropyDSURPS_S", "entropyDSURPS_U", "sd_Mimic", "sd_Beat", "sd_Mimic2", "sd_Beat2", "sd_Lose", "sd_Lose2", "ccAMPS12", "ccAMPS13", "ccAMPS14", "ccAMPS23", "ccAMPS24", "ccAMPS34"]
+             "entropyDSUAIRPS_D", "entropyDSUAIRPS_S", "entropyDSUAIRPS_U", 
+             "entropyDSURPS_D", "entropyDSURPS_S", "entropyDSURPS_U", "sd_Mimic", "sd_Beat", "sd_Mimic2", "sd_Beat2", "sd_Lose", "sd_Lose2", "ccAMPS12", "ccAMPS13", "ccAMPS14", "ccAMPS23", "ccAMPS24", "ccAMPS34"]
 
              #"entropyDSURPS_D", "entropyDSURPS_S", "entropyDSURPS_U", "sd_Mimic", "sd_Beat", "sd_Mimic2", "sd_Beat2", "sd_Lose", "sd_Lose2", "ccAMPS12", "ccAMPS13", "ccAMPS14", "ccAMPS23", "ccAMPS24", "ccAMPS34"]             
 #feats_FCx = ["ccAMPS13", "ccAMPS14", "ccAMPS34", "ccAMPS12", "ccAMPS23", "ccAMPS24"]
 #feats_FCx = ["ccAMPS13", "ccAMPS14", "ccAMPS34"]
 #feats_FCx = []
 feats_FRx = ["isis_lv", "isis_cv", "isis_corr", "isis"]
-#feats_FRx = []
+feats_FRx = []
 feats_FTx = ["time_aft_win", "time_aft_los", "time_aft_tie", "time_b4aft_los_mn", "time_b4aft_los_sd", "time_b4aft_tie_mn", "time_b4aft_tie_sd", "time_b4aft_win_mn", "time_b4aft_win_sd"]
-#feats_FTx = []
+feats_FTx = []
 
 #features_cab1 = []#"sds00", "sds01", "sds02",
                  #"sds10", "sds11", "sds12",
@@ -1242,7 +1244,7 @@ feats_FTx = ["time_aft_win", "time_aft_los", "time_aft_tie", "time_b4aft_los_mn"
 
 #features_AI  = ["mn_diff_top2", "sd_diff_top2", "mnFt1", "mnFt2", "mnFt3", "mnFt4", "mnFt5", "mnFt6", "mnFt7", "mnFt8", "sdFt1", "sdFt3", "sdFt4", "sdFt5", "sdFt6", "sdFt7", "sdFt8", "aift1", "aift2", "aift3", "aift4", "aift5", "aift10", "AIent1", "AIent3", "AIent4", "AIent5", "AIent6", "AIent7", "AIent8", "FEAT1", "FEAT2", "FEAT3", "FEAT4", "FEAT5", "FEAT6", "FEAT7", "]
 feats_FAx  = ["mn_diff_top2", "sd_diff_top2", "mnFt1", "mnFt2", "mnFt3", "mnFt4", "mnFt5", "mnFt6", "mnFt7", "mnFt8", "sdFt1", "sdFt3", "sdFt4", "sdFt5", "sdFt6", "sdFt7", "sdFt8", "aift1", "aift2", "aift3", "aift4", "aift5", "aift10", "aift11", "aift12", "aift13", "aift14", "aift15", "aift16", "aift17", "aift18", "aift19", "aift20", "aift21", "aift22", "aift23", "aift24", "AIent1", "AIent3", "AIent4", "AIent5", "AIent6", "AIent7", "AIent8", "s_rps0", "s_rps1", "s_rps2"]
-#feats_FAx = []
+feats_FAx = []
 
 #features_cab = ["moresimV4"]
 #    "m_BW", "m_BT", "m_BL", "sd_MW", 
@@ -1697,3 +1699,35 @@ _plt.hist(_N.argmax(near0_4[filtdat], axis=1), bins=_N.linspace(-0.5, 8.5, 10), 
 _plt.ylim(0, 0.25)
 _plt.savefig("most_time_spent_near_1_for_cond_prob_comp_%d" % SHF_NUM)
 
+
+#for i1 in range(3):
+    #for i2 in range(i1+1, 3):
+for i1 in range(3):
+    for i2 in range(i1+1, 3):
+        pcs = _N.empty(len(partIDs))
+        for i in range(len(partIDs)):
+            y1 = _N.convolve(all_AI_weights[i, 3:, i1, i2, 1], gk, mode="same")
+            y2 = _N.convolve(all_AI_weights[i, 3:, i2, i1, 0], gk, mode="same")
+            #pc, pv = _ss.pearsonr(all_AI_weights[i, 3:, i1, i2, 0], all_AI_weights[i, 3:, i2, i1, 0])
+            pc, pv = _ss.pearsonr(y1, y2)
+            pcs[i] = pc
+        for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
+            exec("tar = %(t)s" % {"t" : star})
+            pc, pv = _ss.pearsonr(pcs[filtdat], tar[filtdat])
+            print("%(1)d %(2)d   %(pc).3f" % {"1" : i1, "2" : i2, "pc" : pc})
+            #fig = _plt.figure()
+            #_plt.scatter(pcs[filtdat], tar[filtdat])
+
+
+# pcs = _N.empty(len(partIDs))
+# for i in range(len(partIDs)):
+#     pc1, pv1 = _ss.pearsonr(all_AI_weights[i, 10:, 1, 0, 0], 
+#                             all_AI_weights[i, 10:, 2, 0, 0])
+#     pc2, pv2 = _ss.pearsonr(all_AI_weights[i, 10:, 0, 1, 0], 
+#                             all_AI_weights[i, 10:, 0, 2, 0])
+#     pcs[i] = pc1 + pc2
+#     #print("%(1).3f   %(2).3f   %(3).3f" % {"1" : pc1, "2" : pc2, "3" : pc3})
+# for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
+#     exec("tar = %s" % star)
+#     pc, pv = _ss.pearsonr(pcs[filtdat], tar[filtdat])
+#     print(pc)

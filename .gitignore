@@ -2,3 +2,8 @@ WorkDir
 TMB*fns*.txt
 *.pyc
 *.png
+.DS_Store
+*.key
+*.eps
+*.dmp
+*.pdf

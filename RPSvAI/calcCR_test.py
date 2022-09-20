@@ -11,6 +11,7 @@ import RPSvAI.constants as _AIconst
 import scipy.stats as _ss
 import glob
 import RPSvAI.simulation.simulate_prcptrn as sim_prc
+import time
 
 win_type = 1   #  window is of fixed number of games
 win_type = 2  #  window is of fixed number of games that meet condition 
@@ -59,9 +60,8 @@ for datetm in datetms:
 
     sran = ""
 
-    SHUFFLES = 5
+    SHUFFLES = 205
     a_s = _N.zeros((len(datetms), SHUFFLES+1))
-    acs = _N.zeros((len(datetms), SHUFFLES+1, 61))
 
     if gk_w > 0:
         gk = _Am.gauKer(gk_w)
@@ -86,12 +86,14 @@ for datetm in datetms:
     if (ini_percep is not None) and (expt[0:6] != "SIMHUM"):
         weights, preds, iw = sim_prc.recreate_percep_istate(td, ini_percep, fin_percep)
 
+    t1 = time.time()
     if win_type == 1:
         ngsDSUWTL, ngsRPSWTL, ngsDSURPS, ngsDSUAIRPS, all_tds, TGames  = empirical.empirical_NGS(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_human_AI, expt=expt, visit=visit, dither_unobserved=False)
     elif win_type == 2:
         ngsDSUWTL, ngsRPSWTL, ngsDSURPS, ngsDSUAIRPS, ngsRPSRPS, ngsRPSAIRPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_human_AI, expt=expt, visit=visit)
         #ngs, ngsRPS, ngsDSURPS, ngsDSUAIRPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_human_AI, expt=expt, visit=visit)
         #ngsDSURPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds_DSURPS(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_human_AI, expt=expt, visit=visit)
+    t2 = time.time()
 
     if ngsDSUWTL is not None:
         fNGSDSUWTL = _N.empty((SHUFFLES+1, ngsDSUWTL.shape[1], ngsDSUWTL.shape[2]), dtype=_N.float16)
@@ -101,20 +103,21 @@ for datetm in datetms:
         fNGSRPSRPS = _N.empty((SHUFFLES+1, ngsDSUWTL.shape[1], ngsDSUWTL.shape[2]), dtype=_N.float16)                        
         fNGSRPSAIRPS = _N.empty((SHUFFLES+1, ngsDSUWTL.shape[1], ngsDSUWTL.shape[2]), dtype=_N.float16)            
         #fNGSSTSW = _N.empty((SHUFFLES+1, ngsSTSW.shape[1], ngsSTSW.shape[2]))            
+        t3 = time.time()
         t_ms = _N.mean(_N.diff(all_tds[0, :, 3]))
         for sh in range(SHUFFLES+1):
             for i in range(9):
                 if gk_w > 0:
                     fNGSDSUWTL[sh, i] = _N.convolve(ngsDSUWTL[sh, i], gk, mode="same")
                     fNGSRPSWTL[sh, i] = _N.convolve(ngsRPSWTL[sh, i], gk, mode="same")
-                    fNGSDSURPS[sh, i] = _N.convolve(ngsDSURPS[sh, i], gk, mode="same")
+                    #fNGSDSURPS[sh, i] = _N.convolve(ngsDSURPS[sh, i], gk, mode="same")
                     fNGSDSUAIRPS[sh, i] = _N.convolve(ngsDSUAIRPS[sh, i], gk, mode="same")
                     fNGSRPSRPS[sh, i] = _N.convolve(ngsRPSRPS[sh, i], gk, mode="same")
                     fNGSRPSAIRPS[sh, i] = _N.convolve(ngsRPSAIRPS[sh, i], gk, mode="same")                                                                        
                 else:
                     fNGSDSUWTL[sh, i] = ngsDSUWTL[sh, i]
                     fNGSRPS[sh, i] = ngsRPSWTL[sh, i]
-                    fNGSDSURPS[sh, i] = ngsDSURPS[sh, i]
+                    #fNGSDSURPS[sh, i] = ngsDSURPS[sh, i]
                     fNGSDSUAIRPS[sh, i] = ngsDSUAIRPS[sh, i]
                     fNGSRPSRPS[sh, i] = ngsRPSRPS[sh, i]
                     fNGSRPSAIRPS[sh, i] = ngsRPSAIRPS[sh, i]                                        
@@ -125,10 +128,11 @@ for datetm in datetms:
         #         else:
         #             fNGSSTSW[sh, i] = ngsSTSW[sh, i]
 
+        t4 = time.time()
         pklme = {}
         pklme["cond_probsDSUWTL"] = fNGSDSUWTL
         pklme["cond_probsRPSWTL"] = fNGSRPSWTL
-        pklme["cond_probsDSURPS"] = fNGSDSURPS
+        #pklme["cond_probsDSURPS"] = fNGSDSURPS
         pklme["cond_probsDSUAIRPS"] = fNGSDSUAIRPS
         pklme["cond_probsRPSRPS"] = fNGSRPSRPS
         pklme["cond_probsRPSAIRPS"] = fNGSRPSAIRPS            
@@ -144,5 +148,10 @@ for datetm in datetms:
         dmp = open("%(dir)s/variousCRs_%(visit)d.dmp" % {"dir" : out_dir, "visit" : visit}, "wb")
         pickle.dump(pklme, dmp, -1)
         dmp.close()
+        t5 = time.time()
+        print("%.3f" % (t2-t1))
+        print("%.3f" % (t3-t2))
+        print("%.3f" % (t4-t3))
+        print("%.3f" % (t5-t4))
 
 
