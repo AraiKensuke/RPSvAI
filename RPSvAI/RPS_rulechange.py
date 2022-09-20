@@ -3,31 +3,30 @@
 from sklearn import linear_model
 import sklearn.linear_model as _skl
 import numpy as _N
-import AIiRPS.utils.read_taisen as _rt
+import RPSvAI.utils.read_taisen as _rt
 import scipy.io as _scio
 import scipy.stats as _ss
 import matplotlib.pyplot as _plt
-import AIiRPS.utils.read_taisen as _rd
-import AIiRPS.utils.misc as _Am
+import RPSvAI.utils.read_taisen as _rd
+import RPSvAI.utils.misc as _Am
 from scipy.signal import savgol_filter
 from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
-import AIiRPS.skull_plot as _sp
 import os
 import sys
 from sumojam.devscripts.cmdlineargs import process_keyval_args
 import pickle
 import mne.time_frequency as mtf
 import GCoh.eeg_util as _eu
-import AIiRPS.rpsms as rpsms
+#import RPSvAI.rpsms as rpsms
 import GCoh.preprocess_ver as _ppv
 
-import AIiRPS.constants as _cnst
-from AIiRPS.utils.dir_util import getResultFN
+import RPSvAI.constants as _cnst
+from RPSvAI.utils.dir_util import workdirFN, datadirFN
 import GCoh.datconfig as datconf
-import AIiRPS.models.CRutils as _crut
-import AIiRPS.models.empirical_ken as _emp
+import RPSvAI.models.CRutils as _crut
+import RPSvAI.models.empirical_ken as _emp
 from sklearn.decomposition import PCA
-import AIiRPS.AIRPSfeatures as _aift
+import RPSvAI.AIRPSfeatures as _aift
 
 import GCoh.eeg_util as _eu
 import matplotlib.ticker as ticker
@@ -132,10 +131,10 @@ def only_complete_data(partIDs, TO, label, SHF_NUM):
     for partID in partIDs:
         pid += 1
 
-        dmp       = depickle(getResultFN("%(rpsm)s/%(lb)d/WTL_1.dmp" % {"rpsm" : partID, "lb" : label}))
-        _prob_mvs = dmp["cond_probs"][SHF_NUM]
-        _prob_mvsRPS = dmp["cond_probsRPS"][SHF_NUM]
-        _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
+        dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
+        _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM]
+        _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM]
+        #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM]                
         __hnd_dat = dmp["all_tds"][SHF_NUM]
         _hnd_dat   = __hnd_dat[0:TO]
 
@@ -155,7 +154,7 @@ def depickle(s):
 look_at_AQ = True
 
 biggest=True
-top_comps=9
+top_comps=3
 thrI = 1
 nI=1
 r1=0.4
@@ -189,7 +188,9 @@ SHF_NUM = 0
 
 expt = "TMB2"
 if expt == "TMB2":
-    lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
+    lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
+
+    #lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
     partIDs = lm["partIDs"]
     TO = 300
 elif expt == "EEG1":
@@ -213,16 +214,20 @@ TO -= strtTr
 
 #fig= _plt.figure(figsize=(14, 14))
 
-SHUFFLES = 50
-extra_w = 2
+SHUFFLES = 0
+extra_w = 5
 t0 = -5 - extra_w
 t1 = 10 + extra_w
 cut = 3
-all_avgs = _N.empty((len(partIDs), SHUFFLES+1, t1-t0))
+all_avgs = _N.zeros((len(partIDs), SHUFFLES+1, t1-t0))
 l_all_avgs = []
 netwins  = _N.empty(len(partIDs), dtype=_N.int)
 gk = _Am.gauKer(1)
 gk /= _N.sum(gk)
+gk2 = _Am.gauKer(2)
+gk2 /= _N.sum(gk2)
+#gk2 = None
+
 #gk = None
 
 pid = 0
@@ -305,22 +310,27 @@ sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
 sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
 sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
+lm = depickle("out")
+ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
+
+has_nonzero_CR_comps = _N.zeros(len(partIDs), dtype=_N.int)
+
 for partID in partIDs:
     pid += 1
-    dmp       = depickle(getResultFN("%(rpsm)s/%(lb)d/WTL_%(v)d.dmp" % {"rpsm" : partID, "lb" : label, "v" : visit}))
-
+    dmp       = depickle(workdirFN("%(rpsm)s/%(lb)d/variousCRs_%(visit)d.dmp" % {"rpsm" : partID, "lb" : label, "visit" : visit}))
+    
     if expt == "TMB2":
-        AQ28scrs[pid-1], soc_skils[pid-1], rout[pid-1], switch[pid-1], imag[pid-1], fact_pat[pid-1] = _rt.AQ28("/Users/arai/Sites/taisen/DATA/%(data)s/%(date)s/%(pID)s/AQ29.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : expt})
+        AQ28scrs[pid-1], soc_skils[pid-1], rout[pid-1], switch[pid-1], imag[pid-1], fact_pat[pid-1] = _rt.AQ28(datadirFN("%(data)s/%(date)s/%(pID)s/AQ29.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : expt}))
 
-    _prob_mvs = dmp["cond_probs"][:, :, strtTr:]
-    _prob_mvsRPS = dmp["cond_probsRPS"][:, strtTr:]
-    _prob_mvsDSURPS = dmp["cond_probsDSURPS"][:, strtTr:]
+    _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][:, :, strtTr:]
+    _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][:, strtTr:]
+    #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][:, strtTr:]
     _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][:, strtTr:]
     _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][:, strtTr:]
     _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][:, strtTr:]        
-    prob_mvs  = _prob_mvs[:, :, 0:TO - win]  #  is bigger than hand by win size
-    prob_mvsRPS  = _prob_mvsRPS[:, :, 0:TO - win]  #  is bigger than hand by win size
-    prob_mvsDSURPS  = _prob_mvsDSURPS[:, :, 0:TO - win]  #  is bigger than hand by win size
+    prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, :, 0:TO - win]  #  is bigger than hand by win size
+    prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, :, 0:TO - win]  #  is bigger than hand by win size
+    #prob_mvsDSURPS  = _prob_mvsDSURPS[:, :, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, :, 0:TO - win]  #  is bigger than hand by win size    
     prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, :, 0:TO - win]  #  is bigger than hand by win size
     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, :, 0:TO - win]  #  is bigger than hand by win size    
@@ -329,9 +339,9 @@ for partID in partIDs:
     
     for SHF_NUM in range(SHUFFLES+1):
     #for SHF_NUM in range(70, 71):
-        _prob_mvs = dmp["cond_probs"][SHF_NUM][:, strtTr:]
-        _prob_mvsRPS = dmp["cond_probsRPS"][SHF_NUM][:, strtTr:]
-        _prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM][:, strtTr:]
+        _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM][:, strtTr:]
+        _prob_mvsRPSWTL = dmp["cond_probsRPSWTL"][SHF_NUM][:, strtTr:]
+        #_prob_mvsDSURPS = dmp["cond_probsDSURPS"][SHF_NUM][:, strtTr:]
         _prob_mvsDSUAIRPS = dmp["cond_probsDSUAIRPS"][SHF_NUM][:, strtTr:]
         _prob_mvsRPSRPS = dmp["cond_probsRPSRPS"][SHF_NUM][:, strtTr:]
         _prob_mvsRPSAIRPS = dmp["cond_probsRPSAIRPS"][SHF_NUM][:, strtTr:]
@@ -356,22 +366,22 @@ for partID in partIDs:
 
         #rsp_tms_cv[pid-1] = _N.std(_hnd_dat[:, 3]) / _N.mean(_hnd_dat[:, 3])
         #marginalCRs[pid-1] = _emp.marginalCR(_hnd_dat)
-        prob_mvs  = _prob_mvs[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsRPS  = _prob_mvsRPS[:, 0:TO - win]  #  is bigger than hand by win size
-        prob_mvsDSURPS  = _prob_mvsDSURPS[:, 0:TO - win]  #  is bigger than hand by win size
+        prob_mvsDSUWTL  = _prob_mvsDSUWTL[:, 0:TO - win]  #  is bigger than hand by win size
+        prob_mvsRPSWTL  = _prob_mvsRPSWTL[:, 0:TO - win]  #  is bigger than hand by win size
+        #prob_mvsDSURPS  = _prob_mvsDSURPS[:, 0:TO - win]  #  is bigger than hand by win size
         prob_mvsDSUAIRPS  = _prob_mvsDSUAIRPS[:, 0:TO - win]  #  is bigger than hand by win size
         prob_mvsRPSRPS  = _prob_mvsRPSRPS[:, 0:TO - win]  #  is bigger than hand by win size
         prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, 0:TO - win]  #  is bigger than hand by win size                        
         #prob_mvs_STSW  = _prob_mvs_STSW[:, 0:TO - win]  #  is bigger than hand by win size    
-        prob_mvs = prob_mvs.reshape((3, 3, prob_mvs.shape[1]))
-        prob_mvs_RPS = prob_mvsRPS.reshape((3, 3, prob_mvsRPS.shape[1]))
-        prob_mvs_DSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
-        prob_mvs_DSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))        
-        prob_mvs_RPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))
-        prob_mvs_RPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))        
+        prob_mvsDSUWTL = prob_mvsDSUWTL.reshape((3, 3, prob_mvsDSUWTL.shape[1]))
+        prob_mvsRPSWTL = prob_mvsRPSWTL.reshape((3, 3, prob_mvsRPSWTL.shape[1]))
+        #prob_mvs_DSURPS = prob_mvsDSURPS.reshape((3, 3, prob_mvsDSURPS.shape[1]))
+        prob_mvsDSUAIRPS = prob_mvsDSUAIRPS.reshape((3, 3, prob_mvsDSUAIRPS.shape[1]))        
+        prob_mvsRPSRPS = prob_mvsRPSRPS.reshape((3, 3, prob_mvsRPSRPS.shape[1]))
+        prob_mvsRPSAIRPS = prob_mvsRPSAIRPS.reshape((3, 3, prob_mvsRPSAIRPS.shape[1]))        
 
         #marginalCRs[pid-1, SHF_NUM] = _emp.marginalCR(_hnd_dat)
-        N = prob_mvs.shape[2]
+        N = prob_mvsDSUWTL.shape[2]
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvs_RPS, prob_mvs], gkISI, equalize=True)
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSUAIRPS, prob_mvs_DSURPS, prob_mvs_RPS, prob_mvs], gkISI, equalize=True)
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs_DSURPS, prob_mvsRPS, prob_mvs, prob_mvs_DSUAIRPS], gkISI, equalize=False)
@@ -380,8 +390,18 @@ for partID in partIDs:
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvs, prob_mvsRPS], None, biggest=True, top_comps=9)
 
         ##### GOOD
-        dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvsRPS, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=biggest, top_comps=top_comps)
-        maxs = _aift.get_maxes(behv, thrs, thrI=thrI, nI=nI, r1=r1, win=3)
+        #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvsRPS, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=biggest, top_comps=top_comps)
+        #dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvs_DSUAIRPS, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=biggest, top_comps=top_comps)
+        #frameworks = ["DSUWTL", "RPSWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
+
+        #dbehv, behv    = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvs_DSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], ranks[pid-1])
+        #maxs = _aift.get_maxes(behv, thrs, thrI=thrI, nI=nI, r1=r1, win=3)
+        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], gk2, ranks_of_cmps[pid-1])
+
+
+
+
+
         ##### GOOD
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_DSURPS, prob_mvs_DSUAIRPS, prob_mvs, prob_mvsRPS, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=True, top_comps=7)
         #maxs = _aift.get_maxes(behv, thrs, thrI=4, nI=2, r1=0.2, win=3)
@@ -422,225 +442,239 @@ for partID in partIDs:
             thrs[pid-1] = 28
         #####!!!!!  len(maxs) < cut means nothing to trigger average
         """
-        #maxs = _N.where((dbehv[0:TO-11] >= 0) & (dbehv[1:TO-10] < 0))[0] + (win//2)#  3 from label71
 
-        n_maxes[pid-1, SHF_NUM] = len(maxs)
-        #print("%(sh)d   %(lm)d" % {"sh" : SHF_NUM, "lm" : len(maxs)})
-        #mn_stayL[pid-1] = _N.std(stayLs)
+        if behv is not None:
+            has_nonzero_CR_comps[pid-1] = 1
+            #dbehv  = _N.diff(_N.convolve(behv, gk, mode="same")) #+ _N.diff(behv))
+            dbehv  = _N.diff(behv)
+            maxs = _N.where((dbehv[0:TO-11] >= 0) & (dbehv[1:TO-10] < 0))[0] + (win//2)#  3 from label71
+
+            for sh in range(1):
+                if sh > 0:
+                    _N.random.shuffle(inds)
+                hnd_dat = _hnd_dat[inds]
+
+                avgs = _N.zeros((len(maxs)-2*cut, t1-t0))
+                #print(maxs)
+
+
+                for im in range(cut, len(maxs)-cut):
+                    #print(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2].shape)
+                    #print("%(1)d %(2)d" % {"1" : maxs[im]+t0, "2" : maxs[im]+t1})
+                    st = 0
+                    en = t1-t0
+                    if maxs[im] + t0 < 0:   #  just don't use this one
+                        print("DON'T USE THIS ONE")
+                        avgs[im-1, :] = 0
+                    else:
+                        try:
+                            avgs[im-cut, :] = hnd_dat[maxs[im]+t0:maxs[im]+t1, 2]
+                            if len(_N.where((pid-1) == filtdat)[0]) == 1:  #  in filtdat
+                                l_all_avgs.append(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2])
+                        except ValueError:   #  trigger lags past end of games
+                            print("*****  pid-1:%(pid)d   SHF_NUM: %(sh)d     t0=%(1)d  t1=%(2)d" % {"1" : maxs[im]+t0, "2" : maxs[im]+t1, "sh" : SHF_NUM, "pid" : (pid-1)})
+                            #print(avgs[im-1, :].shape)
+                            #print(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2])
+                            avgs[im-1, :] = 0                        
+
+
+                all_avgs[pid-1, sh] = _N.mean(avgs, axis=0)  #  trigger average
+                if _N.sum(_N.isnan(all_avgs[pid-1, sh])):
+                    print("ISNAN   %(pid)d   %(sh)d" % {"sh" : SHF_NUM, "pid" : (pid-1)})
+                    print(all_avgs[pid-1, sh])
+                    print(avgs)
+                    print(avgs.shape)
+                    #print("..........    %d" % _N.sum(_N.isnan(prob_mvs)))
+                #fig.add_subplot(5, 5, pid)
+                #_plt.plot(_N.mean(avgs, axis=0))
+
+            isi   = _N.diff(maxs)
+            pc, pv = rm_outliersCC_neighbors(isi[0:-1], isi[1:])
+            #pc, pv = _ss.pearsonr(isi[0:-1], isi[1:])
+            isis_corr[pid-1] = pc
+            isis[pid-1] = _N.mean(isi)        
+            isis_cv[pid-1] = _N.std(isi) / isis[pid-1]
+
+            isis_lv[pid-1] = (3/(len(isi)-1))*_N.sum((isi[0:-1] - isi[1:])**2 / (isi[0:-1] + isi[1:])**2 )
+
+
+#             #srtd   = _N.sort(all_avgs[pid-1, 1:], axis=0)
+#             #signal_5_95[pid-1, 1] = srtd[int(0.05*SHUFFLES)]
+#             #signal_5_95[pid-1, 2] = srtd[int(0.95*SHUFFLES)]
+#             signal_5_95[pid-1, 0] = all_avgs[pid-1, 0]
+#             signal_5_95[pid-1, 3] = (signal_5_95[pid-1, 0] - signal_5_95[pid-1, 1]) / (signal_5_95[pid-1, 2] - signal_5_95[pid-1, 1])
+
+#             #pfrm_change36[pid-1] = _N.max(signal_5_95[pid-1, 0, 3:6]) - _N.min(signal_5_95[pid-1, 0, 3:6])
+
+#             sInds = _N.argsort(signal_5_95[pid-1, 0, 6:9])
+#             #sInds = _N.argsort(signal_5_95[pid-1, 0, 5:10])
+#             if sInds[2] - sInds[0] > 0:
+#                 m69 = 1
+#             else:
+#                 m69 = -1
+
+#             imax69 = _N.argmax(signal_5_95[pid-1, 0, 6:9])+6
+#             imin69 = _N.argmin(signal_5_95[pid-1, 0, 6:9])+6
+#             if SHF_NUM == 0:
+#                 chg[pid-1] = _N.mean(signal_5_95[pid-1, 0, 7:11]) - _N.mean(signal_5_95[pid-1, 0, 4:8])
+#                 pfrm_change69[pid-1] = signal_5_95[pid-1, 0, imax69] - signal_5_95[pid-1, 0, imin69]
+#                 #pfrm_change69[pid-1] = _N.mean(signal_5_95[pid-1, 0, 7:9]) - _N.mean(signal_5_95[pid-1, 0, 5:7])
+
+
+#             ###################################################
+#             #fig.add_subplot(6, 6, pid)
+
+#             netwins[pid-1] = _N.sum(_hnd_dat[:, 2])
+#             # _plt.title(netwins[pid-1] )
+#             # _plt.plot(ts, signal_5_95[pid-1, 0], marker=".", ms=10)
+#             # _plt.plot(ts, signal_5_95[pid-1, 1])
+#             # _plt.plot(ts, signal_5_95[pid-1, 2])
+#             # _plt.axvline(x=-0.5, ls="--")
+
+#             be = _N.where(signal_5_95[pid-1, 0] < signal_5_95[pid-1, 1])[0]
+#             if len(be) > 0:
+#                 belows.extend(be)
+#             ab = _N.where(signal_5_95[pid-1, 0] > signal_5_95[pid-1, 2])[0]        
+#             if len(ab) > 0:
+#                 aboves.extend(ab)
+
+#             #prob_mvs = lm["all_prob_mvsA"][ip]
+
+#             cntr = 0
+#             n_cntr = 0
+#             maxp_chg_times_wtl = []
+
+#             rc_trg_avg[pid-1, :, SHF_NUM] = signal_5_95[pid-1, 0]
+#             #y_pred = obs_v_preds[byScores[igd], 0:test_sz-1, 1]
+
+#             halfT = (t1-t0)//2
+#             A1 = _N.vstack([_N.arange(halfT), _N.ones(halfT)]).T
+#             A2 = _N.vstack([_N.arange(halfT+1), _N.ones(halfT+1)]).T
+#             #A2 = _N.vstack([_N.arange(8), _N.ones(8)]).T
+#             m1, c1 = _N.linalg.lstsq(A1, rc_trg_avg[pid-1, 0:halfT, 0], rcond=-1)[0]
+#             m2, c2 = _N.linalg.lstsq(A2, rc_trg_avg[pid-1, halfT:2*halfT+1, 0], rcond=-1)[0]
+#             y1 = m1*(halfT-1) + c1
+#             y2 = c2
+#             jump[pid-1] = y2-y1
+#             m1s[pid-1] = m1
+#             m2s[pid-1] = m2
+#             c1s[pid-1] = c1
+#             c2s[pid-1] = c2
+
+#             isi   = cleanISI(_N.diff(maxs), minISI=3)
+#             #else:
+#             #    isi   = cleanISI(_N.diff(maxs_DSURPS), minISI=1)
+#             #maxs = maxs_DSUWTL
+#             #_aift.rulechange(_hnd_dat, signal_5_95, pfrm_change36, pfrm_change69, pfrm_change912, imax_imin_pfrm36, imax_imin_pfrm69, imax_imin_pfrm912, all_avgs, SHUFFLES, t0, t1, maxs, cut, pid)
+#             #isi   = cleanISI(_N.diff(maxs), minISI=2)
+#             pc, pv = rm_outliersCC_neighbors(isi[0:-1], isi[1:])
+#             #pc, pv = _ss.pearsonr(isi[0:-1], isi[1:])
+#             isis_corr[pid-1] = pc
+#             isis[pid-1] = _N.mean(isi)        
+#             isis_cv[pid-1] = _N.std(isi) / isis[pid-1]
+
+#             isis_lv[pid-1] = (3/(len(isi)-1))*_N.sum((isi[0:-1] - isi[1:])**2 / (isi[0:-1] + isi[1:])**2 )
         
-        for sh in range(1):
-            if sh > 0:
-                _N.random.shuffle(inds)
-            hnd_dat = _hnd_dat[inds]
+# popmn_rc_trg_avg = _N.mean(rc_trg_avg[filtdat], axis=0)        
 
-            avgs = _N.zeros((len(maxs)-2*cut, t1-t0))
-            #print(maxs)
-
-
-            for im in range(cut, len(maxs)-cut):
-                #print(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2].shape)
-                #print("%(1)d %(2)d" % {"1" : maxs[im]+t0, "2" : maxs[im]+t1})
-                st = 0
-                en = t1-t0
-                if maxs[im] + t0 < 0:   #  just don't use this one
-                    print("DON'T USE THIS ONE")
-                    avgs[im-1, :] = 0
-                else:
-                    try:
-                        avgs[im-cut, :] = hnd_dat[maxs[im]+t0:maxs[im]+t1, 2]
-                        if len(_N.where((pid-1) == filtdat)[0]) == 1:  #  in filtdat
-                            l_all_avgs.append(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2])
-                    except ValueError:   #  trigger lags past end of games
-                        print("*****  pid-1:%(pid)d   SHF_NUM: %(sh)d     t0=%(1)d  t1=%(2)d" % {"1" : maxs[im]+t0, "2" : maxs[im]+t1, "sh" : SHF_NUM, "pid" : (pid-1)})
-                        #print(avgs[im-1, :].shape)
-                        #print(hnd_dat[maxs[im]+t0:maxs[im]+t1, 2])
-                        avgs[im-1, :] = 0                        
+# #  p(UP | W)
+# #  a big change means lots of UP | W
+# fig  = _plt.figure(figsize=(8, 4))
+# for sh in range(SHUFFLES):
+#     _plt.plot(popmn_rc_trg_avg[:, sh+1], color="grey", lw=1)
+# _plt.plot(popmn_rc_trg_avg[:, 0], color="black", lw=3)
+# _plt.xticks(_N.arange(t1-t0), _N.arange(-7, 8), fontsize=15)
+# _plt.yticks(fontsize=15)
+# _plt.axvline(x=7, ls=":", color="grey")
+# _plt.xlabel("lags from rule change (# games)", fontsize=18)
+# _plt.ylabel("p(WIN, lag) - p(LOS, lag)", fontsize=18)
+# fig.subplots_adjust(bottom=0.15, left=0.15)
+# _plt.xlim(0, 14)
+# #_plt.ylim(-0.1, 0.1)
+# _plt.savefig("Rulechange_w_shuffles")
 
 
-            all_avgs[pid-1, sh] = _N.mean(avgs, axis=0)  #  trigger average
-            if _N.sum(_N.isnan(all_avgs[pid-1, sh])):
-                print("ISNAN   %(pid)d   %(sh)d" % {"sh" : SHF_NUM, "pid" : (pid-1)})
-                print(all_avgs[pid-1, sh])
-                print(avgs)
-                print(avgs.shape)
-                #print("..........    %d" % _N.sum(_N.isnan(prob_mvs)))
-            #fig.add_subplot(5, 5, pid)
-            #_plt.plot(_N.mean(avgs, axis=0))
+# bf =_N.mean(rc_trg_avg[:, 5:7, 0], axis=1)
+# af =_N.mean(rc_trg_avg[:, 7:9, 0], axis=1)
 
-        #srtd   = _N.sort(all_avgs[pid-1, 1:], axis=0)
-        #signal_5_95[pid-1, 1] = srtd[int(0.05*SHUFFLES)]
-        #signal_5_95[pid-1, 2] = srtd[int(0.95*SHUFFLES)]
-        signal_5_95[pid-1, 0] = all_avgs[pid-1, 0]
-        signal_5_95[pid-1, 3] = (signal_5_95[pid-1, 0] - signal_5_95[pid-1, 1]) / (signal_5_95[pid-1, 2] - signal_5_95[pid-1, 1])
+# save_trl_by_trl = _N.empty((len(filtdat), t1-t0))
+# iii = -1
+# for ifd in filtdat:
+#     iii += 1
+#     save_trl_by_trl[iii] = rc_trg_avg[ifd, :, 0] - _N.mean(rc_trg_avg[ifd, :, 0])
+# _N.savetxt("trl_mean_rulechg_jmp.txt", save_trl_by_trl.T, fmt=("%.3f " * len(filtdat)))
 
-        #pfrm_change36[pid-1] = _N.max(signal_5_95[pid-1, 0, 3:6]) - _N.min(signal_5_95[pid-1, 0, 3:6])
+# fig = _plt.figure(figsize=(5, 11))
+# #_plt.plot(popmn_rc_trg_avg[:, 0], color="black", lw=3)
 
-        sInds = _N.argsort(signal_5_95[pid-1, 0, 6:9])
-        #sInds = _N.argsort(signal_5_95[pid-1, 0, 5:10])
-        if sInds[2] - sInds[0] > 0:
-            m69 = 1
-        else:
-            m69 = -1
+# all_trg_trls = _N.array(l_all_avgs)
+# ys1stHalf = _N.empty((halfT, len(partIDs)))
+# ys2ndHalf = _N.empty((halfT+1, len(partIDs)))
 
-        imax69 = _N.argmax(signal_5_95[pid-1, 0, 6:9])+6
-        imin69 = _N.argmin(signal_5_95[pid-1, 0, 6:9])+6
-        if SHF_NUM == 0:
-            chg[pid-1] = _N.mean(signal_5_95[pid-1, 0, 7:11]) - _N.mean(signal_5_95[pid-1, 0, 4:8])
-            pfrm_change69[pid-1] = signal_5_95[pid-1, 0, imax69] - signal_5_95[pid-1, 0, imin69]
-            #pfrm_change69[pid-1] = _N.mean(signal_5_95[pid-1, 0, 7:9]) - _N.mean(signal_5_95[pid-1, 0, 5:7])
-            
+# for pid in range(len(partIDs)):
+#     #_plt.plot(A1[:, 0], c1s[pid] + m1s[pid]*A1[:, 0], color="#DDDDDD")
+#     ys1stHalf[:, pid] = c1s[pid] + m1s[pid]*A1[:, 0]
+#     #_plt.plot(halfT+A2[:, 0], c2s[pid] + m2s[pid]*A2[:, 0], color="#DDDDDD")
+#     ys2ndHalf[:, pid] = c2s[pid] + m2s[pid]*A2[:, 0]
+# m_ys1stHalf = ys1stHalf - _N.mean(ys1stHalf, axis=0).reshape((1, ys1stHalf.shape[1]))
+# m_ys2ndHalf = ys2ndHalf - _N.mean(ys2ndHalf, axis=0).reshape((1, ys2ndHalf.shape[1]))    
+# for pid in range(len(partIDs)):
+#     _plt.plot(A1[:, 0], ys1stHalf[:, pid], color="#DDDDDD")
+#     _plt.plot(halfT+A2[:, 0], ys2ndHalf[:, pid], color="#DDDDDD")    
 
-        ###################################################
-        #fig.add_subplot(6, 6, pid)
+# weights = n_maxes[:, 0] / _N.sum(n_maxes[:, 0])
+# mn_att = _N.mean(_N.mean(all_trg_trls, axis=0))
 
-        netwins[pid-1] = _N.sum(_hnd_dat[:, 2])
-        # _plt.title(netwins[pid-1] )
-        # _plt.plot(ts, signal_5_95[pid-1, 0], marker=".", ms=10)
-        # _plt.plot(ts, signal_5_95[pid-1, 1])
-        # _plt.plot(ts, signal_5_95[pid-1, 2])
-        # _plt.axvline(x=-0.5, ls="--")
-
-        be = _N.where(signal_5_95[pid-1, 0] < signal_5_95[pid-1, 1])[0]
-        if len(be) > 0:
-            belows.extend(be)
-        ab = _N.where(signal_5_95[pid-1, 0] > signal_5_95[pid-1, 2])[0]        
-        if len(ab) > 0:
-            aboves.extend(ab)
-
-        #prob_mvs = lm["all_prob_mvsA"][ip]
-
-        cntr = 0
-        n_cntr = 0
-        maxp_chg_times_wtl = []
-
-        rc_trg_avg[pid-1, :, SHF_NUM] = signal_5_95[pid-1, 0]
-        #y_pred = obs_v_preds[byScores[igd], 0:test_sz-1, 1]
-
-        halfT = (t1-t0)//2
-        A1 = _N.vstack([_N.arange(halfT), _N.ones(halfT)]).T
-        A2 = _N.vstack([_N.arange(halfT+1), _N.ones(halfT+1)]).T
-        #A2 = _N.vstack([_N.arange(8), _N.ones(8)]).T
-        m1, c1 = _N.linalg.lstsq(A1, rc_trg_avg[pid-1, 0:halfT, 0], rcond=-1)[0]
-        m2, c2 = _N.linalg.lstsq(A2, rc_trg_avg[pid-1, halfT:2*halfT+1, 0], rcond=-1)[0]
-        y1 = m1*(halfT-1) + c1
-        y2 = c2
-        jump[pid-1] = y2-y1
-        m1s[pid-1] = m1
-        m2s[pid-1] = m2
-        c1s[pid-1] = c1
-        c2s[pid-1] = c2
-
-        isi   = cleanISI(_N.diff(maxs), minISI=3)
-        #else:
-        #    isi   = cleanISI(_N.diff(maxs_DSURPS), minISI=1)
-        #maxs = maxs_DSUWTL
-        #_aift.rulechange(_hnd_dat, signal_5_95, pfrm_change36, pfrm_change69, pfrm_change912, imax_imin_pfrm36, imax_imin_pfrm69, imax_imin_pfrm912, all_avgs, SHUFFLES, t0, t1, maxs, cut, pid)
-        #isi   = cleanISI(_N.diff(maxs), minISI=2)
-        pc, pv = rm_outliersCC_neighbors(isi[0:-1], isi[1:])
-        #pc, pv = _ss.pearsonr(isi[0:-1], isi[1:])
-        isis_corr[pid-1] = pc
-        isis[pid-1] = _N.mean(isi)        
-        isis_cv[pid-1] = _N.std(isi) / isis[pid-1]
-
-        isis_lv[pid-1] = (3/(len(isi)-1))*_N.sum((isi[0:-1] - isi[1:])**2 / (isi[0:-1] + isi[1:])**2 )
-        
-popmn_rc_trg_avg = _N.mean(rc_trg_avg[filtdat], axis=0)        
-
-#  p(UP | W)
-#  a big change means lots of UP | W
-fig  = _plt.figure(figsize=(8, 4))
-for sh in range(SHUFFLES):
-    _plt.plot(popmn_rc_trg_avg[:, sh+1], color="grey", lw=1)
-_plt.plot(popmn_rc_trg_avg[:, 0], color="black", lw=3)
-_plt.xticks(_N.arange(t1-t0), _N.arange(-7, 8), fontsize=15)
-_plt.yticks(fontsize=15)
-_plt.axvline(x=7, ls=":", color="grey")
-_plt.xlabel("lags from rule change (# games)", fontsize=18)
-_plt.ylabel("p(WIN, lag) - p(LOS, lag)", fontsize=18)
-fig.subplots_adjust(bottom=0.15, left=0.15)
-_plt.xlim(0, 14)
-#_plt.ylim(-0.1, 0.1)
-_plt.savefig("Rulechange_w_shuffles")
+# _plt.plot(_N.mean(all_trg_trls, axis=0), color="black", lw=2, marker=".", ms=15)
+# #_plt.plot(A1[:, 0], _N.sum(ys1stHalf[:, filtdat]*weights[filtdat], axis=1), color="orange")
+# _plt.plot(A1[:, 0], _N.mean(ys1stHalf[:, filtdat], axis=1), color="orange")
+# #_plt.plot(halfT+A2[:, 0], _N.sum(ys2ndHalf[:, filtdat]*weights[filtdat], axis=1), color="orange")
+# _plt.plot(halfT+A2[:, 0], _N.mean(ys2ndHalf[:, filtdat], axis=1), color="orange")
+# #_plt.plot(A1[:, 0], _N.sum(ys1stHalf*weights, axis=1), color="orange")
+# #_plt.plot(halfT+A2[:, 0], _N.sum(ys2ndHalf*weights, axis=1), color="orange")
 
 
-bf =_N.mean(rc_trg_avg[:, 5:7, 0], axis=1)
-af =_N.mean(rc_trg_avg[:, 7:9, 0], axis=1)
+# tksz=15
+# lblsz=17
+# _plt.xticks(_N.arange(15+2*extra_w), _N.arange(-7-extra_w, 8+extra_w), fontsize=tksz)
+# _plt.yticks(fontsize=tksz)
+# _plt.xlim(0, 14+2*extra_w)
+# _plt.xlabel("lags from rule change (#games)", fontsize=lblsz)
+# _plt.ylabel("p(WIN) - p(LOSE) at lag", fontsize=lblsz)
+# fig.subplots_adjust(left=0.2, right=0.98, bottom=0.1, top=0.98)
+# _plt.savefig("rulechange")
 
-save_trl_by_trl = _N.empty((len(filtdat), t1-t0))
-iii = -1
-for ifd in filtdat:
-    iii += 1
-    save_trl_by_trl[iii] = rc_trg_avg[ifd, :, 0] - _N.mean(rc_trg_avg[ifd, :, 0])
-_N.savetxt("trl_mean_rulechg_jmp.txt", save_trl_by_trl.T, fmt=("%.3f " * len(filtdat)))
-
-fig = _plt.figure(figsize=(5, 11))
-#_plt.plot(popmn_rc_trg_avg[:, 0], color="black", lw=3)
-
-all_trg_trls = _N.array(l_all_avgs)
-ys1stHalf = _N.empty((halfT, len(partIDs)))
-ys2ndHalf = _N.empty((halfT+1, len(partIDs)))
-
-for pid in range(len(partIDs)):
-    #_plt.plot(A1[:, 0], c1s[pid] + m1s[pid]*A1[:, 0], color="#DDDDDD")
-    ys1stHalf[:, pid] = c1s[pid] + m1s[pid]*A1[:, 0]
-    #_plt.plot(halfT+A2[:, 0], c2s[pid] + m2s[pid]*A2[:, 0], color="#DDDDDD")
-    ys2ndHalf[:, pid] = c2s[pid] + m2s[pid]*A2[:, 0]
-m_ys1stHalf = ys1stHalf - _N.mean(ys1stHalf, axis=0).reshape((1, ys1stHalf.shape[1]))
-m_ys2ndHalf = ys2ndHalf - _N.mean(ys2ndHalf, axis=0).reshape((1, ys2ndHalf.shape[1]))    
-for pid in range(len(partIDs)):
-    _plt.plot(A1[:, 0], ys1stHalf[:, pid], color="#DDDDDD")
-    _plt.plot(halfT+A2[:, 0], ys2ndHalf[:, pid], color="#DDDDDD")    
-
-weights = n_maxes[:, 0] / _N.sum(n_maxes[:, 0])
-mn_att = _N.mean(_N.mean(all_trg_trls, axis=0))
-
-_plt.plot(_N.mean(all_trg_trls, axis=0), color="black", lw=2, marker=".", ms=15)
-#_plt.plot(A1[:, 0], _N.sum(ys1stHalf[:, filtdat]*weights[filtdat], axis=1), color="orange")
-_plt.plot(A1[:, 0], _N.mean(ys1stHalf[:, filtdat], axis=1), color="orange")
-#_plt.plot(halfT+A2[:, 0], _N.sum(ys2ndHalf[:, filtdat]*weights[filtdat], axis=1), color="orange")
-_plt.plot(halfT+A2[:, 0], _N.mean(ys2ndHalf[:, filtdat], axis=1), color="orange")
-#_plt.plot(A1[:, 0], _N.sum(ys1stHalf*weights, axis=1), color="orange")
-#_plt.plot(halfT+A2[:, 0], _N.sum(ys2ndHalf*weights, axis=1), color="orange")
-
-tksz=15
-lblsz=17
-_plt.xticks(_N.arange(15+2*extra_w), _N.arange(-7-extra_w, 8+extra_w), fontsize=tksz)
-_plt.yticks(fontsize=tksz)
-_plt.xlim(0, 14+2*extra_w)
-_plt.xlabel("lags from rule change (#games)", fontsize=lblsz)
-_plt.ylabel("p(WIN) - p(LOSE) at lag", fontsize=lblsz)
-fig.subplots_adjust(left=0.2, right=0.98, bottom=0.1, top=0.98)
-_plt.savefig("rulechange")
-
-"""
-fig = _plt.figure()
-A1 = _N.vstack([_N.arange(halfT), _N.ones(halfT)]).T
-A2 = _N.vstack([_N.arange(halfT+1), _N.ones(halfT+1)]).T
-#A2 = _N.vstack([_N.arange(8), _N.ones(8)]).T
-m1, c1 = _N.linalg.lstsq(A1, rc_trg_avg[filtdat[0], 0:halfT, 0], rcond=-1)[0]
-m2, c2 = _N.linalg.lstsq(A2, rc_trg_avg[filtdat[0], halfT:2*halfT+1, 0], rcond=-1)[0]
-y1 = m1*(halfT-1) + c1
-y2 = c2
-y1 = c1 + m1*A1[:, 0]
-y2 = c2 + m2*A2[:, 0]
-_plt.plot(A1[:, 0], y1)
-_plt.plot(A2[:, 0]+halfT, y2)
-_plt.plot(rc_trg_avg[filtdat[0], :, 0])
-"""
+# """
+# fig = _plt.figure()
+# A1 = _N.vstack([_N.arange(halfT), _N.ones(halfT)]).T
+# A2 = _N.vstack([_N.arange(halfT+1), _N.ones(halfT+1)]).T
+# #A2 = _N.vstack([_N.arange(8), _N.ones(8)]).T
+# m1, c1 = _N.linalg.lstsq(A1, rc_trg_avg[filtdat[0], 0:halfT, 0], rcond=-1)[0]
+# m2, c2 = _N.linalg.lstsq(A2, rc_trg_avg[filtdat[0], halfT:2*halfT+1, 0], rcond=-1)[0]
+# y1 = m1*(halfT-1) + c1
+# y2 = c2
+# y1 = c1 + m1*A1[:, 0]
+# y2 = c2 + m2*A2[:, 0]
+# _plt.plot(A1[:, 0], y1)
+# _plt.plot(A2[:, 0]+halfT, y2)
+# _plt.plot(rc_trg_avg[filtdat[0], :, 0])
+# """
 
 
-sths = _N.array(filtdat)
-print("interval statistics")
+# sths = _N.array(filtdat)
+# print("interval statistics")
 
-dmp_dat    = {}
-data       = {}
-dmp_dat["prms_%(tc)d_%(thrI)d_%(nI)d_%(r1).2f" % {"tc" : top_comps, "thrI" : thrI, "nI" : nI, "r1" : r1}] = data
+# dmp_dat    = {}
+# data       = {}
+# dmp_dat["prms_%(tc)d_%(thrI)d_%(nI)d_%(r1).2f" % {"tc" : top_comps, "thrI" : thrI, "nI" : nI, "r1" : r1}] = data
 
-data["avg"] = _N.mean(all_trg_trls, axis=0)
-print(".................. all_trg_trls")
-print(data["avg"])
+# data["avg"] = _N.mean(all_trg_trls, axis=0)
+# print(".................. all_trg_trls")
+# print(data["avg"])
+nzfiltdat = _N.where(has_nonzero_CR_comps)[0]
+
 for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
-    data[sud] = _N.empty((6, 2))
+    #data[sud] = _N.empty((6, 2))
     print("int stat------   %s" % sud)
     exec("ist_ud = %s" % sud)
     ist = -1
@@ -648,18 +682,18 @@ for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
         ist += 1
         exec("tar = %s" % star)
         print("!!!!!  %s" % star)
-        pc, pv = _ss.pearsonr(ist_ud[filtdat], tar[sths])
+        pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
         #if _N.abs(pc) > 0.15:
-        data[sud][ist] = pc, pv
+        #data[sud][ist] = pc, pv
         print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
 
 
-if os.access("Results_231/RC_all_combos.dmp", os.F_OK):
-    lm = depickle("Results_231/RC_all_combos.dmp")
-    for ky in lm.keys():
-        dmp_dat[ky] = lm[ky]
+# if os.access("Results_231/RC_all_combos.dmp", os.F_OK):
+#     lm = depickle("Results_231/RC_all_combos.dmp")
+#     for ky in lm.keys():
+#         dmp_dat[ky] = lm[ky]
 
-dmpout = open("Results_231/RC_all_combos.dmp", "wb")    
-pickle.dump(dmp_dat, dmpout, -1)
-dmpout.close()
+# dmpout = open("Results_231/RC_all_combos.dmp", "wb")    
+# pickle.dump(dmp_dat, dmpout, -1)
+# dmpout.close()
 

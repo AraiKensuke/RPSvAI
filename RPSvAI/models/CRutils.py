@@ -65,7 +65,7 @@ def get_dbehv_combined(prob_mvs_list, gk, cond=_N.array([0, 1, 2]), equalize=Fal
     else:
         return _dbehv, behv
 
-def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks):
+def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, n_big_comps=2):
     """
     Rule change is when probability is changing rapidly
     MAXIMA of this   -->  SUM( ABS( dP(act_i | cond_j) / dt ) )
@@ -79,52 +79,37 @@ def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks):
         for ic in range(3):
             for ia in range(3):
                 if ranks[ifr, ic, ia] / 205 > 0.95:
-                    l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
+                    if gk is None:
+                        l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
+                    else:
+                        l_all_prob_mvs.append(_N.convolve(prob_mvs_list[ifr][ic, ia], gk, mode="same"))
     all_prob_mvs = _N.array(l_all_prob_mvs)
 
-    l_all_prob_mvs = _N.empty((9*n_diff_repr, prob_mvs_list[0].shape[2]))
+    n_big_comps = all_prob_mvs.shape[0]
 
-    std_4_repr   = _N.zeros(n_diff_repr)
+    # std_4_repr   = _N.zeros(n_diff_repr)
 
-    if biggest:
-        use      = _N.zeros(n_diff_repr*top_comps, dtype=int)
-    for nr in range(n_diff_repr):
-        all_prob_mvs[nr*9:(nr+1)*9] =  prob_mvs_list[nr].reshape(9, L)
-        std_4_repr[nr] = _N.std(prob_mvs_list[nr].reshape(9, L))  #  9 stds
-        if biggest:
-            if use_sds is None:
-                comp_stds = _N.std(prob_mvs_list[nr].reshape(9, L), axis=1)
-            else:
-                comp_stds = use_sds[nr].reshape(9)
-            
-            srtdinds = _N.argsort(comp_stds)
-            use[nr*top_comps:(nr+1)*top_comps] = srtdinds[9-top_comps:]+nr*top_comps
-
-    ab_d_prob_mvs = _N.abs(_N.diff(all_prob_mvs, axis=1))  #  time derivative
-
-    # if equalize:
-    #     std_r = _N.std(ab_d_prob_mvs, axis=1).reshape(9*n_diff_repr, 1)
-    #     ab_d_prob_mvs /= std_r
-
-    if biggest:
-        #print(use)
-        behv = _N.sum(ab_d_prob_mvs[use], axis=0)  #  1-D timeseries
+    if all_prob_mvs.shape[0] > n_big_comps:  #  all_prob_mvs
+        ab_d_prob_mvs = _N.abs(_N.diff(all_prob_mvs, axis=1))  #  time derivative
+        
+        dbehv = _N.sum(ab_d_prob_mvs, axis=0)  #  1-D timeseries        
+        return dbehv
     else:
-        behv = _N.sum(ab_d_prob_mvs, axis=0)  #  1-D timeseries        
-    """
-    if gk is not None:
-        fbehv = _N.convolve(behv, gk, mode="same")
-        dbehv = _N.diff(fbehv)       #  use to find maxes of time derivative
-        return dbehv, fbehv
-    else:
-        return _dbehv, behv
+        return None
+    # """
+    # if gk is not None:
+    #     fbehv = _N.convolve(behv, gk, mode="same")
+    #     dbehv = _N.diff(fbehv)       #  use to find maxes of time derivative
+    #     return dbehv, fbehv
+    # else:
+    #     return _dbehv, behv
     
-    """
-    _dbehv = _N.diff(behv)       #  use to find maxes of time derivative
-    if gk is not None:
-        return _N.convolve(_dbehv, gk, mode="same"), behv
-    else:
-        return _dbehv, behv
+    # """
+    # _dbehv = _N.diff(behv)       #  use to find maxes of time derivative
+    # if gk is not None:
+    #     return _N.convolve(_dbehv, gk, mode="same"), behv
+    # else:
+    #     return _dbehv, behv
 
 def get_dbehv_combined_choose_(prob_mvs, gk, equalize=False):
     n_diff_repr = len(prob_mvs)   #  list of prob_mvs for each representation
