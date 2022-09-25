@@ -396,7 +396,7 @@ for partID in partIDs:
 
         #dbehv, behv    = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvs_DSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], ranks[pid-1])
         #maxs = _aift.get_maxes(behv, thrs, thrI=thrI, nI=nI, r1=r1, win=3)
-        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], gk2, ranks_of_cmps[pid-1])
+        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], gk2, ranks_of_cmps[pid-1], big_percentile=0.95)
 
 
 
@@ -673,19 +673,19 @@ for partID in partIDs:
 # print(data["avg"])
 nzfiltdat = _N.where(has_nonzero_CR_comps)[0]
 
-for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
-    #data[sud] = _N.empty((6, 2))
-    print("int stat------   %s" % sud)
-    exec("ist_ud = %s" % sud)
-    ist = -1
-    for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
-        ist += 1
-        exec("tar = %s" % star)
-        print("!!!!!  %s" % star)
-        pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
-        #if _N.abs(pc) > 0.15:
-        #data[sud][ist] = pc, pv
-        print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
+# for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
+#     #data[sud] = _N.empty((6, 2))
+#     print("int stat------   %s" % sud)
+#     exec("ist_ud = %s" % sud)
+#     ist = -1
+#     for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
+#         ist += 1
+#         exec("tar = %s" % star)
+#         print("!!!!!  %s" % star)
+#         pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
+#         #if _N.abs(pc) > 0.15:
+#         #data[sud][ist] = pc, pv
+#         print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
 
 
 # if os.access("Results_231/RC_all_combos.dmp", os.F_OK):
@@ -697,3 +697,15 @@ for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
 # pickle.dump(dmp_dat, dmpout, -1)
 # dmpout.close()
 
+fig = _plt.figure(figsize=(7, 4))
+#for inz in range(len(nzfiltdat)):
+#    _plt.plot(all_avgs[nzfiltdat[inz], 0] - _N.mean(all_avgs[nzfiltdat[inz], 0]), color="grey")
+ts = _N.arange(-(t1-t0)//2+1, (t1-t0)//2+1)
+mnsig = _N.mean(all_avgs[nzfiltdat, 0], axis=0)
+_plt.plot(ts, mnsig, color="black", lw=3)
+_plt.axvline(x=0, ls="--", color="grey")
+_plt.xlabel("lagged games from rule change", fontsize=12)
+_plt.xticks(fontsize=11)
+_plt.yticks(fontsize=11)
+_plt.ylabel("win prob. - lose prob.", fontsize=12)
+_plt.savefig("Rule-change")

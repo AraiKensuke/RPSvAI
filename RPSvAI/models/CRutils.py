@@ -65,7 +65,7 @@ def get_dbehv_combined(prob_mvs_list, gk, cond=_N.array([0, 1, 2]), equalize=Fal
     else:
         return _dbehv, behv
 
-def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, n_big_comps=2):
+def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, min_big_comps=2, big_percentile=0.95):
     """
     Rule change is when probability is changing rapidly
     MAXIMA of this   -->  SUM( ABS( dP(act_i | cond_j) / dt ) )
@@ -78,7 +78,7 @@ def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, n_big_comps=2):
     for ifr in range(len(prob_mvs_list)):
         for ic in range(3):
             for ia in range(3):
-                if ranks[ifr, ic, ia] / 205 > 0.95:
+                if ranks[ifr, ic, ia] / 205 > big_percentile:
                     if gk is None:
                         l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
                     else:
@@ -89,7 +89,7 @@ def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, n_big_comps=2):
 
     # std_4_repr   = _N.zeros(n_diff_repr)
 
-    if all_prob_mvs.shape[0] > n_big_comps:  #  all_prob_mvs
+    if all_prob_mvs.shape[0] > min_big_comps:  #  all_prob_mvs
         ab_d_prob_mvs = _N.abs(_N.diff(all_prob_mvs, axis=1))  #  time derivative
         
         dbehv = _N.sum(ab_d_prob_mvs, axis=0)  #  1-D timeseries        

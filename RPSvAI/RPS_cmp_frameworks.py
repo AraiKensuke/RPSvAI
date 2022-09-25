@@ -309,8 +309,8 @@ sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
 sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
 sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
-frameworks = ["DSUWTL", "RPSWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
-frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", "p(RPS | RPS)"]
+frameworks = ["DSUWTL", "RPSWTL", "RPSRPS", "DSUAIRPS", "RPSAIRPS", ]
+frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(RPS | RPS)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", ]
 
 #frameworks = ["DSUWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
 #frameworks = ["DSUWTL", "RPSRPS"]
