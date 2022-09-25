@@ -186,7 +186,7 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "TMB2"
+expt = "SIMHUM1"
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
 
@@ -203,7 +203,7 @@ elif expt == "SIMHUM1":
         partIDs.append("20110101_0000-%s" % sec)
         lm = {}
         lm["filtdat"] = _N.arange(60)
-        TO = 1000
+        TO = 300
 
 filtdat = lm["filtdat"]
 #filtdat = _N.array([8])
@@ -306,9 +306,9 @@ thrs = _N.empty(len(partIDs), dtype=_N.int)
 winlosses       = _N.empty((len(partIDs), 2))
 marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 
-sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
-sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
-sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
+# sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
+# sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
+# sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
 lm = depickle("out")
 ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
@@ -396,7 +396,12 @@ for partID in partIDs:
 
         #dbehv, behv    = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvs_DSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], ranks[pid-1])
         #maxs = _aift.get_maxes(behv, thrs, thrI=thrI, nI=nI, r1=r1, win=3)
-        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS, prob_mvsRPSRPS], gk2, ranks_of_cmps[pid-1], big_percentile=0.95)
+
+
+
+
+
+        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], big_percentile=0.95)
 
 
 

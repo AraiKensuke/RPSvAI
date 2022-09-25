@@ -4,7 +4,7 @@ import numpy as _N
 import matplotlib.pyplot as _plt
 import GCoh.eeg_util as _eu
 import RPSvAI.utils.read_taisen as _rt
-from RPSvAI.utils.dir_util import workdirFN
+from RPSvAI.utils.dir_util import workdirFN, datadirFN
 import os
 import pickle
 import RPSvAI.constants as _AIconst
@@ -23,7 +23,7 @@ visits=[1]
 
 #  These are ParticipantIDs.
 
-expt="TMB2"
+expt="SIMHUM1"
 
 datetms = []
 #fp = open("%(f)sfns_%(v)d.txt" % {"f" : expt, "v" : visit}, "r")
@@ -37,7 +37,7 @@ if expt=="TMB2":
 if expt[0:6] == "SIMHUM":
     nSIMHUM=int(expt[6:])
     syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
-    yr_dir    = "DATA/%(e)s/%(syr)s" % {"e" : expt, "syr" : syr}
+    yr_dir    = datadirFN("%(e)s/%(syr)s" % {"e" : expt, "syr" : syr})
 
     candidate_dirs = os.listdir(yr_dir)
 

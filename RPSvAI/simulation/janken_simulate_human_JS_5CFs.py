@@ -48,25 +48,28 @@ Cmp3 = [e, e, 1-2*e]
 Rnd=  [1/3, 1/3, 1/3]
 
 
-#Frmwks      = [0, 0, 2, 3, 2, 4]
+Frmwks      = [0, 0, 2, 3, 2, 4]
 #Frmwks      = [1, 1, 1, 1, 1, 1]
 #Frmwks      = [4, 4, 4, 4, 4, 4]
-Frmwks      = [3, 3, 3, 3, 3, 3]
 #Frmwks      = [3, 3, 3, 3, 3, 3]
 #Frmwks      = [0, 0, 0, 0, 0, 0]
-Trepertoire = [[Cmp3, Cmp1, Cmp2],
-               [Cmp3, Cmp2, Rnd],
-               [Cmp2, Rnd, Rnd],
-               [Cmp3, Rnd, Cmp2],
-               [Rnd, Cmp1, Cmp2],
-               [Rnd, Cmp2, Cmp1]]
+Trepertoire = [[Cmp3, Cmp1, Cmp2], #  02, 10, 21
+               [Cmp3, Cmp2, Rnd],  #  02, 11
+               [Cmp2, Rnd, Rnd],   #  01
+               [Cmp3, Rnd, Cmp2],  #  02, 21
+               [Rnd, Cmp1, Cmp2],  #  10, 21
+               [Rnd, Cmp2, Cmp1]]  #  11, 20
+#  framework 0   is 02, 10, 11, 21
+#  framework 2   is 01, 10, 21
+#  framework 3   is 02, 21
+#  framework 4   is 11, 20
 
 #Trepertoire = [[[1/3, 1/3, 1/3], [1/3, 1/3, 1/3], [1/3, 1/3, 1/3]]]
 
 #  next_hand(T, wtl, last_hand)
 
 
-max_hands  = 500
+max_hands  = 300
 
 vs_human   = False     #  is there dynamics in the human hand selection?
 hist_dep_hands = True   # if vs_human is False, does AI play random or vs rule
@@ -81,7 +84,7 @@ mc_decay   = 0.1
 #   Nash_eq vs computer (not hist_dep)
 
 
-REPS       = 1
+REPS       = 60
 
 chg        = _N.zeros(REPS)
 fws        = _N.zeros((REPS, 3), dtype=_N.int)
@@ -97,10 +100,10 @@ minute  = "%02d" % now.minute
 second  = "%02d" % now.second
 jh_fn_mod = "rpsm_%(yr)s%(mth)s%(dy)s-%(hr)s%(min)s-%(sec)s" % {"yr" : year, "mth" : mnthStr, "dy" : day, "hr" : hour, "min" : minute, "sec" : second}
 
-nRules = 1
+nRules = 6
 iCurrT = 0
 
-expt = "SIMHUM5"
+expt = "SIMHUM1"
 nSIMHUM=int(expt[6:])
 syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
 expt_dir  = datadirFN(expt)
@@ -113,8 +116,8 @@ if not os.access(yr_dir, os.F_OK):
 else:
     os.system("rm -rf %s/*" % yr_dir)
 
-switch_T_shrt0 = 10
-switch_T_long0 = 17
+switch_T_shrt0 = 12
+switch_T_long0 = 21
 
 XTs1   = 1-0.1*_N.random.rand(REPS) 
 XTs2   = 1+0.5*_N.random.rand(REPS)

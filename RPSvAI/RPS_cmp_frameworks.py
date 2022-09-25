@@ -190,7 +190,7 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "TMB2"
+expt = "SIMHUM1"
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
     #lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
@@ -206,7 +206,7 @@ elif expt == "SIMHUM1":
         partIDs.append("20110101_0000-%s" % sec)
         lm = {}
         lm["filtdat"] = _N.arange(60)
-        TO = 1000
+        TO = 300
 
 filtdat = lm["filtdat"]
 
@@ -304,10 +304,6 @@ thrs = _N.empty(len(partIDs), dtype=_N.int)
 #stdsDSURPS      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
 
 marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
-
-sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
-sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
-sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
 frameworks = ["DSUWTL", "RPSWTL", "RPSRPS", "DSUAIRPS", "RPSAIRPS", ]
 frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(RPS | RPS)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", ]
@@ -646,16 +642,16 @@ _plt.xlabel("participant #", fontsize=14)
 fig.subplots_adjust(wspace=0.5, hspace=0.85, top=0.85, left=0.08, right=0.94)
 _plt.savefig("Num_of_frameworks_comps_big_%d" % win)
     
-for ifr in range(5):
-    print("--------   %s" % frameworks[ifr])
-    for ic in range(3):
-        for ia in range(3):
-            print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
-            for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
-                exec("tar = %s" % star)
-                pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
-                #pc, pv = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
-                print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
+# for ifr in range(5):
+#     print("--------   %s" % frameworks[ifr])
+#     for ic in range(3):
+#         for ia in range(3):
+#             print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
+#             for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
+#                 exec("tar = %s" % star)
+#                 pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
+#                 #pc, pv = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
+#                 print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
 
 
 
