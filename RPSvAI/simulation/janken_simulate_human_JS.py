@@ -1,13 +1,14 @@
-#import AIiRPS.simulation.prcptrn2dw as prcptrn
-import AIiRPS.simulation.prcptrnJS as prcptrn
-#import AIiRPS.simulation.samk as samk
+#import RPSvAI.simulation.prcptrn2dw as prcptrn
+import RPSvAI.simulation.prcptrnJS as prcptrn
+#import RPSvAI.simulation.samk as samk
 import numpy as _N
 import time as _tm
-import AIiRPS.simulation.janken_switch_hands_multi as _jsh
+import RPSvAI.simulation.janken_switch_hands_multi as _jsh
 import matplotlib.pyplot as _plt
 import datetime
 import pickle
-import AIiRPS.utils.read_taisen as _rt
+import RPSvAI.utils.read_taisen as _rt
+from RPSvAI.utils.dir_util import datadirFN, workdirFN
 import os
 
 _NME = 0
@@ -96,15 +97,15 @@ iCurrStrat = 0
 expt = "SIMHUM17"
 nSIMHUM=int(expt[6:])
 syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
-expt_dir  = "/Users/arai/Sites/taisen/DATA/%(e)s" % {"e" : expt}
-yr_dir    = "/Users/arai/Sites/taisen/DATA/%(e)s/%(syr)s" % {"e" : expt, "syr" : syr}
+expt_dir  = datadirFN(expt)
+yr_dir    = datadirFN("%(e)s/%(syr)s" % {"e" : expt, "syr" : syr})
+
 if not os.access(expt_dir, os.F_OK):
     os.mkdir(expt_dir)
 if not os.access(yr_dir, os.F_OK):        
     os.mkdir(yr_dir)
 else:
     os.system("rm -rf %s/*" % yr_dir)
-    os.system("rm -rf /Users/arai/nctc/Workspace/AIiRPS_Results/%s_*" % syr)    
 
 switch_T_shrt0 = 10
 switch_T_long0 = 17
@@ -288,8 +289,8 @@ for rep in range(REPS):
     fws[rep] = fw
     #print("    PER %(pc)d,  TIE %(tie)d, [[HUMAN]] %(hum)d   UpOrDown %(updn)d" % {"pc" : fw[2], "tie" : fw[1], "hum" : fw[0], "updn" : (fw[0] - fw[2])})
 
-    file_nm = "/Users/arai/nctc/Workspace/AIiRPS_SimDAT/%s.dat" % jh_fn_mod
-    gt_file_nm = "/Users/arai/nctc/Workspace/AIiRPS_SimDAT/%s_GT.dat" % jh_fn_mod
+    file_nm = "/Users/arai/nctc/Workspace/RPSvAI_SimDAT/%s.dat" % jh_fn_mod
+    gt_file_nm = "/Users/arai/nctc/Workspace/RPSvAI_SimDAT/%s_GT.dat" % jh_fn_mod
     #u_fnm = uniqFN("SimDAT/%s" % file_nm, serial=True)
     #u_fnm_gt = uniqFN("SimDAT/%s" % gt_file_nm, serial=True)
     hnd_dat = _N.array(pairs, dtype=_N.int)

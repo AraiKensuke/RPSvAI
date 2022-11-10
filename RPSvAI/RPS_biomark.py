@@ -185,8 +185,8 @@ if data == "RAND":
 
 visit = 2
 visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
-visit = 1
-visits = [1]
+#visit = 1
+#visits = [1]
 #visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
     
 if data == "TMB2":

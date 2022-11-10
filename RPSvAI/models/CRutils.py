@@ -65,7 +65,7 @@ def get_dbehv_combined(prob_mvs_list, gk, cond=_N.array([0, 1, 2]), equalize=Fal
     else:
         return _dbehv, behv
 
-def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, min_big_comps=2, big_percentile=0.95):
+def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, ranks0s, len1, min_big_comps=2, big_percentile=0.95, flip_choose_components=False):
     """
     Rule change is when probability is changing rapidly
     MAXIMA of this   -->  SUM( ABS( dP(act_i | cond_j) / dt ) )
@@ -78,11 +78,24 @@ def get_dbehv_biggest_fluc(prob_mvs_list, gk, ranks, min_big_comps=2, big_percen
     for ifr in range(len(prob_mvs_list)):
         for ic in range(3):
             for ia in range(3):
-                if ranks[ifr, ic, ia] / 205 > big_percentile:
-                    if gk is None:
-                        l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
-                    else:
-                        l_all_prob_mvs.append(_N.convolve(prob_mvs_list[ifr][ic, ia], gk, mode="same"))
+                use = False
+                if (ranks[ifr, ic, ia] / 205 > big_percentile) or ((ranks0s[ifr, ic, ia] / 205 > 0.98) and (len1[ifr, ic, ia] > 5)):
+                    if not flip_choose_components:
+                        if gk is None:
+
+                            l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
+                        else:
+                            l_all_prob_mvs.append(_N.convolve(prob_mvs_list[ifr][ic, ia], gk, mode="same"))
+                else:
+                    if flip_choose_components:
+                        if gk is None:
+
+                            l_all_prob_mvs.append(prob_mvs_list[ifr][ic, ia])
+                        else:
+                            l_all_prob_mvs.append(_N.convolve(prob_mvs_list[ifr][ic, ia], gk, mode="same"))
+
+
+
     all_prob_mvs = _N.array(l_all_prob_mvs)
 
     n_big_comps = all_prob_mvs.shape[0]

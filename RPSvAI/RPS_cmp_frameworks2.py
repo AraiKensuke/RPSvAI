@@ -165,8 +165,8 @@ r1=0.4
 #_plt.ioff()
 process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
 
-visit = 2
-visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
+#visit = 2
+#visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
 visit = 1
 visits= [1, ]   #  if I want 1 of [1, 2], set this one to [1, 2]
     
@@ -190,7 +190,7 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "SIMHUM3"
+expt = "TMB2"
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
     #lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
@@ -200,25 +200,16 @@ elif expt == "EEG1":
     #partIDs = ["20200109_1504-32"]
     #partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
     partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07", "20210526_1318-12", "20210526_1358-27", "20210526_1416-25", "20210526_1503-39"]
-elif expt == "SIMHUM3":
+elif expt == "SIMHUM1":
     partIDs = []
     for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0000-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0001-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0002-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0003-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0004-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0005-%s" % sec)
-    lm = {}
-    lm["filtdat"] = _N.arange(360)
-    TO = 300
+        partIDs.append("20110101_0000-%s" % sec)
+        lm = {}
+        lm["filtdat"] = _N.arange(60)
+        TO = 1000
 
 filtdat = lm["filtdat"]
+
 
 #filtdat = _N.array([8])
     
@@ -314,8 +305,12 @@ thrs = _N.empty(len(partIDs), dtype=_N.int)
 
 marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 
-frameworks = ["DSUWTL", "RPSWTL", "RPSRPS", "DSUAIRPS", "RPSAIRPS", ]
-frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(RPS | RPS)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", ]
+sum_sd_DSUWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUWTL")
+sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
+sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
+
+frameworks = ["DSUWTL", "RPSWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
+frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)", "p(DSU | AI_RPS)", "p(RPS | AI_RPS)", "p(RPS | RPS)"]
 
 #frameworks = ["DSUWTL", "DSUAIRPS", "RPSAIRPS", "RPSRPS"]
 #frameworks = ["DSUWTL", "RPSRPS"]
@@ -326,7 +321,7 @@ caksRPSRPS = _N.empty(len(partIDs))
 caksRPSAIRPS = _N.empty(len(partIDs))
 caksDSUAIRPS = _N.empty(len(partIDs))
 par        = _N.empty((len(partIDs), 5))
-pick_acts        = _N.empty((len(partIDs), 5))
+pick_acts        = _N.empty((len(partIDs), 5))eworks
 avoid_acts        = _N.empty((len(partIDs), 5))
 
 z1s        = _N.empty((len(partIDs), 5))
@@ -334,11 +329,9 @@ z0s        = _N.empty((len(partIDs), 5))
 rank       = _N.empty((len(partIDs), 5), dtype=_N.int)
 cmp_z1s    = _N.empty((len(partIDs), 5, 3, 3))
 cmp_z1sZ   = _N.empty((len(partIDs), 5, 3, 3))
-fr_cmp_fluc_rank1       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
-fr_lotsof0s       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
+fr_cmp_rank1       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
 fr_cmp_rank0       = _N.empty((len(partIDs), 5, 3, 3), dtype=_N.int)
 fr_cmp_lohi_rank       = _N.zeros((len(partIDs), 5, 3, 3), dtype=_N.int)
-len1s       = _N.zeros((len(partIDs), 5, 3, 3), dtype=_N.int)
 
 CCs        = _N.empty((len(partIDs), 5, 5))
 
@@ -499,8 +492,6 @@ for partID in partIDs:
     mid_rnk_cmpts = [[], [], [], [], []]
     lo_rnk_cmpts = [[], [], [], [], []]
 
-    len0  = _N.zeros(SHUFFLES+1, dtype=_N.int)
-    len1  = _N.zeros(SHUFFLES+1, dtype=_N.int)
     for frmwk in frameworks:
         ifr += 1
         exec("alls = dmp['cond_probs%(fr)s'].reshape((%(shfp1)d, 3, 3, %(N)d))" % {"fr" : frmwk, "shfp1" : (SHUFFLES+1), "N" : (300-win)})
@@ -516,16 +507,10 @@ for partID in partIDs:
                 cmp_z1sZ[pid-1, ifr, ic, ia] = stds[0] / _N.median(stds[1:])
                 cmp_z1s[pid-1, ifr, ic, ia] = stds[0]
                 rnk1 = len(_N.where(stds[0] > stds[1:])[0])
-                for ist in range(SHUFFLES+1):
-                    len0[ist] = len(_N.where(alls[ist, ic, ia] == 0)[0])
-                len1[0] = len(_N.where(alls[0, ic, ia] > 0.6)[0])
-                fr_lotsof0s[pid-1, ifr, ic, ia] = len(_N.where(len0[0] > len0[1:])[0])
-                len1s[pid-1, ifr, ic, ia]       = len1[0]
-                    
                 #rnk1 = len(_N.where(stds[1] > stds[2:])[0])
-                fr_cmp_fluc_rank1[pid-1, ifr, ic, ia] = rnk1
+                fr_cmp_rank1[pid-1, ifr, ic, ia] = rnk1
                 print("%(c)d %(a)d   %(r)d" % {"c" : ic, "a" : ia, "r" : rnk1})
-                if rnk1 / SHUFFLES < 0.1:
+                if rnk1 / SHUFFLES < 0.3:
                     lo_rnk_cmpts[ifr].append(_N.array(alls[0, ic, ia]))
                 elif rnk1 / SHUFFLES > 0.9:
                     hi_rnk_cmpts[ifr].append(_N.array(alls[0, ic, ia]))
@@ -541,6 +526,7 @@ for partID in partIDs:
                 #     _plt.savefig("example%d.png" % iex)
                 #     _plt.close()
                 #     iex += 1
+v                    
 
     ifr1 = -1
     for frmwk1 in frameworks:
@@ -586,9 +572,9 @@ for partID in partIDs:
         #         srtd0 = _N.sort(lens0[1:])
         #         rnk1 = len(_N.where(lens1[0] > srtd1)[0])
         #         rnk0 = len(_N.where(lens0[0] > srtd0)[0])
-        #         fr_cmp_fluc_rank1[pid-1, ifr, ic, ia]       = rnk1
+        #         fr_cmp_rank1[pid-1, ifr, ic, ia]       = rnk1
         #         fr_cmp_rank0[pid-1, ifr, ic, ia]       = rnk0
-        # conds1, acts1 = _N.where(fr_cmp_fluc_rank1[pid-1, ifr] > 90)
+        # conds1, acts1 = _N.where(fr_cmp_rank1[pid-1, ifr] > 90)
         # conds0, acts0 = _N.where(fr_cmp_rank0[pid-1, ifr] > 90)
 
         # ca1     = _N.empty((conds1.shape[0], 2), dtype=_N.int)
@@ -612,21 +598,21 @@ for partID in partIDs:
         
 
 
-dmpout = open(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : expt, "w" : win, "v" : visit}), "wb")
-pickle.dump({"z1s" : z1s, "fr_cmp_fluc_rank1" : fr_cmp_fluc_rank1, "filtdat" : filtdat, "SHUFFLES" : SHUFFLES, "partIDs" : partIDs, "fr_lotsof0s" : fr_lotsof0s, "len1s" : len1s}, dmpout, -1)
+dmpout = open("out", "wb")
+pickle.dump({"z1s" : z1s, "rank" : rank, "filtdat" : filtdat}, dmpout, -1)
 dmpout.close()
 
 #SHUFFLES = SHUFFLES-1
 
 
 for i in range(filtdat.shape[0]):
-    _plt.plot(fr_cmp_fluc_rank1[filtdat[i], 0, 2], color="black")
+    _plt.plot(fr_cmp_rank1[filtdat[i], 0, 2], color="black")
 
 
 for ic in range(3):
     ones_kys = {}
     for i in range(filtdat.shape[0]):
-        key = str(_N.where(fr_cmp_fluc_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
+        key = str(_N.where(fr_cmp_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
         try:
             ones_kys[key] += 1
         except KeyError:
@@ -637,7 +623,7 @@ for ic in range(3):
 for ic in range(3):
     ones_kys = {}
     for i in range(filtdat.shape[0]):
-        key = str(_N.where(fr_cmp_fluc_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
+        key = str(_N.where(fr_cmp_rank1[filtdat[i], 0, ic] > int(0.98*SHUFFLES))[0])
         try:
             ones_kys[key] += 1
         except KeyError:
@@ -650,7 +636,7 @@ fig = _plt.figure(figsize=(10, 6.5))
 _plt.suptitle("# of big fluctuation components", fontsize=14)
 for ifr in range(5):
     fig.add_subplot(5, 1, ifr+1)
-    ipt, icn, iac = _N.where(fr_cmp_fluc_rank1[filtdat, ifr] > int(0.95*SHUFFLES))
+    ipt, icn, iac = _N.where(fr_cmp_rank1[filtdat, ifr] > int(0.95*SHUFFLES))
     cnts, bins, lns  = _plt.hist(ipt, bins=_N.linspace(-0.5, 188.5, 190), color="black")
     _plt.ylim(0, 7)
     _plt.xlim(-1.5, len(filtdat)+0.5)
@@ -661,16 +647,16 @@ _plt.xlabel("participant #", fontsize=14)
 fig.subplots_adjust(wspace=0.5, hspace=0.85, top=0.85, left=0.08, right=0.94)
 _plt.savefig("Num_of_frameworks_comps_big_%d" % win)
     
-# for ifr in range(5):
-#     print("--------   %s" % frameworks[ifr])
-#     for ic in range(3):
-#         for ia in range(3):
-#             print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
-#             for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
-#                 exec("tar = %s" % star)
-#                 pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
-#                 #pc, pv = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
-#                 print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
+for ifr in range(5):
+    print("--------   %s" % frameworks[ifr])
+    for ic in range(3):
+        for ia in range(3):
+            print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
+            for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
+                exec("tar = %s" % star)
+                pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
+                #pc, pv = _ss.pearsonr(fr_cmp_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
+                print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
 
 
 

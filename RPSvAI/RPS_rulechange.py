@@ -186,7 +186,8 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "SIMHUM1"
+expt = "SIMHUM3"
+#expt = "TMB2"
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
 
@@ -197,13 +198,24 @@ elif expt == "EEG1":
     #partIDs = ["20200109_1504-32"]
     #partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
     partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07", "20210526_1318-12", "20210526_1358-27", "20210526_1416-25", "20210526_1503-39"]
-elif expt == "SIMHUM1":
+
+elif expt == "SIMHUM3":
     partIDs = []
     for sec in secs_as_string(0, 60):
-        partIDs.append("20110101_0000-%s" % sec)
-        lm = {}
-        lm["filtdat"] = _N.arange(60)
-        TO = 300
+        partIDs.append("20110103_0000-%s" % sec)
+    for sec in secs_as_string(0, 60):
+        partIDs.append("20110103_0001-%s" % sec)
+    for sec in secs_as_string(0, 60):
+        partIDs.append("20110103_0002-%s" % sec)
+    for sec in secs_as_string(0, 60):
+        partIDs.append("20110103_0003-%s" % sec)
+    for sec in secs_as_string(0, 60):
+        partIDs.append("20110103_0004-%s" % sec)
+    for sec in secs_as_string(0, 60):
+        partIDs.append("20110103_0005-%s" % sec)
+    lm = {}
+    lm["filtdat"] = _N.arange(360)
+    TO = 300
 
 filtdat = lm["filtdat"]
 #filtdat = _N.array([8])
@@ -310,8 +322,10 @@ marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 # sum_sd_RPSWTL = rebuild_sds_array(len(partIDs), lm, "sum_sd_RPSWTL")
 # sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
-lm = depickle("out")
+lm = depickle(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : expt, "w" : win, "v" : visit}))
 ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
+ranks_of_lotsof0s = lm["fr_lotsof0s"]
+len1s = lm["len1s"]
 
 has_nonzero_CR_comps = _N.zeros(len(partIDs), dtype=_N.int)
 
@@ -400,8 +414,12 @@ for partID in partIDs:
 
 
 
-
-        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], big_percentile=0.95)
+        #ranks_of_cmps[pid-1, 0] = 0
+        #ranks_of_lotsof0s[pid-1, 0] = 0
+        #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.6, min_big_comps=4, flip_choose_components=False)
+        #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.5, min_big_comps=4, flip_choose_components=True)
+        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.94, min_big_comps=3, flip_choose_components=False)
+        #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], _N.zeros((3, 3)), len1s[pid-1], big_percentile=0.95, min_big_comps=2)
 
 
 
@@ -501,7 +519,7 @@ for partID in partIDs:
             isis_cv[pid-1] = _N.std(isi) / isis[pid-1]
 
             isis_lv[pid-1] = (3/(len(isi)-1))*_N.sum((isi[0:-1] - isi[1:])**2 / (isi[0:-1] + isi[1:])**2 )
-
+            pfrm_change69[pid-1] = _N.max(all_avgs[pid-1, 0, 5:20]) - _N.min(all_avgs[pid-1, 0, 5:20])
 
 #             #srtd   = _N.sort(all_avgs[pid-1, 1:], axis=0)
 #             #signal_5_95[pid-1, 1] = srtd[int(0.05*SHUFFLES)]
@@ -676,22 +694,23 @@ for partID in partIDs:
 # data["avg"] = _N.mean(all_trg_trls, axis=0)
 # print(".................. all_trg_trls")
 # print(data["avg"])
-nzfiltdat = _N.where(has_nonzero_CR_comps)[0]
+nzfiltdat = _N.intersect1d(_N.where(has_nonzero_CR_comps)[0], filtdat)
 
-# for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:
-#     #data[sud] = _N.empty((6, 2))
-#     print("int stat------   %s" % sud)
-#     exec("ist_ud = %s" % sud)
-#     ist = -1
-#     for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
-#         ist += 1
-#         exec("tar = %s" % star)
-#         print("!!!!!  %s" % star)
-#         pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
-#         #if _N.abs(pc) > 0.15:
-#         #data[sud][ist] = pc, pv
-#         print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
-
+"""
+for sud in ["isis", "isis_corr", "isis_cv", "isis_lv", "pfrm_change69"]:
+    #data[sud] = _N.empty((6, 2))
+    print("int stat------   %s" % sud)
+    exec("ist_ud = %s" % sud)
+    ist = -1
+    for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
+        ist += 1
+        exec("tar = %s" % star)
+        print("!!!!!  %s" % star)
+        pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
+        #if _N.abs(pc) > 0.15:
+        #data[sud][ist] = pc, pv
+        print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
+"""
 
 # if os.access("Results_231/RC_all_combos.dmp", os.F_OK):
 #     lm = depickle("Results_231/RC_all_combos.dmp")
@@ -707,10 +726,14 @@ fig = _plt.figure(figsize=(7, 4))
 #    _plt.plot(all_avgs[nzfiltdat[inz], 0] - _N.mean(all_avgs[nzfiltdat[inz], 0]), color="grey")
 ts = _N.arange(-(t1-t0)//2+1, (t1-t0)//2+1)
 mnsig = _N.mean(all_avgs[nzfiltdat, 0], axis=0)
+_plt.suptitle(len(nzfiltdat))
 _plt.plot(ts, mnsig, color="black", lw=3)
+#_plt.plot(ts, mnsig, color="orange", lw=3)
+_plt.grid()
 _plt.axvline(x=0, ls="--", color="grey")
 _plt.xlabel("lagged games from rule change", fontsize=12)
 _plt.xticks(fontsize=11)
 _plt.yticks(fontsize=11)
 _plt.ylabel("win prob. - lose prob.", fontsize=12)
-_plt.savefig("Rule-change")
+_plt.ylim(-0.15, 0.05)
+_plt.savefig("Rule-change_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=True)

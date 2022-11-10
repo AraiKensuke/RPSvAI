@@ -49,16 +49,16 @@ Rnd=  [1/3, 1/3, 1/3]
 
 
 Frmwks      = [0, 0, 2, 3, 2, 4]
-#Frmwks      = [1, 1, 1, 1, 1, 1]
-#Frmwks      = [4, 4, 4, 4, 4, 4]
-#Frmwks      = [3, 3, 3, 3, 3, 3]
-#Frmwks      = [0, 0, 0, 0, 0, 0]
+
 Trepertoire = [[Cmp3, Cmp1, Cmp2], #  02, 10, 21
                [Cmp3, Cmp2, Rnd],  #  02, 11
                [Cmp2, Rnd, Rnd],   #  01
                [Cmp3, Rnd, Cmp2],  #  02, 21
                [Rnd, Cmp1, Cmp2],  #  10, 21
                [Rnd, Cmp2, Cmp1]]  #  11, 20
+
+Frmwks      = [0]
+Trepertoire = [[Rnd, Rnd, Rnd]]
 #  framework 0   is 02, 10, 11, 21
 #  framework 2   is 01, 10, 21
 #  framework 3   is 02, 21
@@ -84,7 +84,7 @@ mc_decay   = 0.1
 #   Nash_eq vs computer (not hist_dep)
 
 
-REPS       = 60
+REPS       = 360
 
 chg        = _N.zeros(REPS)
 fws        = _N.zeros((REPS, 3), dtype=_N.int)
@@ -100,10 +100,10 @@ minute  = "%02d" % now.minute
 second  = "%02d" % now.second
 jh_fn_mod = "rpsm_%(yr)s%(mth)s%(dy)s-%(hr)s%(min)s-%(sec)s" % {"yr" : year, "mth" : mnthStr, "dy" : day, "hr" : hour, "min" : minute, "sec" : second}
 
-nRules = 6
+nRules = 1
 iCurrT = 0
 
-expt = "SIMHUM1"
+expt = "SIMHUM3"
 nSIMHUM=int(expt[6:])
 syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
 expt_dir  = datadirFN(expt)

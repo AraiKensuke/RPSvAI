@@ -19,11 +19,11 @@ wins= 3
 gk_w = 1
 
 visit = 1
-visits=[1]
+visits=[1,]
 
 #  These are ParticipantIDs.
 
-expt="SIMHUM1"
+expt="SIMHUM3"
 
 datetms = []
 #fp = open("%(f)sfns_%(v)d.txt" % {"f" : expt, "v" : visit}, "r")
