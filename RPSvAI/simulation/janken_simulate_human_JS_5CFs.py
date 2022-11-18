@@ -47,7 +47,7 @@ Cmp3 = [e, e, 1-2*e]
 
 Rnd=  [1/3, 1/3, 1/3]
 
-
+#####  SIMHUM1
 Frmwks      = [0, 0, 2, 3, 2, 4]
 
 Trepertoire = [[Cmp3, Cmp1, Cmp2], #  02, 10, 21
@@ -57,8 +57,17 @@ Trepertoire = [[Cmp3, Cmp1, Cmp2], #  02, 10, 21
                [Rnd, Cmp1, Cmp2],  #  10, 21
                [Rnd, Cmp2, Cmp1]]  #  11, 20
 
-Frmwks      = [0]
-Trepertoire = [[Rnd, Rnd, Rnd]]
+#####  SIMHUM2
+Frmwks      = [0, 2, 3, 4]
+
+Trepertoire = [[Cmp1, Cmp1, Cmp3], #  02, 10, 21
+               [Cmp2, Cmp2, Rnd],  #  02, 11
+               [Cmp3, Rnd, Rnd],   #  01
+               [Cmp1, Cmp3, Rnd]]  #  02, 21
+
+#Frmwks      = [0]
+#Trepertoire = [[Rnd, Rnd, Rnd]]
+#Trepertoire = [[Rnd, Rnd, Rnd]]
 #  framework 0   is 02, 10, 11, 21
 #  framework 2   is 01, 10, 21
 #  framework 3   is 02, 21
@@ -84,7 +93,7 @@ mc_decay   = 0.1
 #   Nash_eq vs computer (not hist_dep)
 
 
-REPS       = 360
+REPS       = 120
 
 chg        = _N.zeros(REPS)
 fws        = _N.zeros((REPS, 3), dtype=_N.int)
@@ -100,10 +109,10 @@ minute  = "%02d" % now.minute
 second  = "%02d" % now.second
 jh_fn_mod = "rpsm_%(yr)s%(mth)s%(dy)s-%(hr)s%(min)s-%(sec)s" % {"yr" : year, "mth" : mnthStr, "dy" : day, "hr" : hour, "min" : minute, "sec" : second}
 
-nRules = 1
+nRules = 4
 iCurrT = 0
 
-expt = "SIMHUM3"
+expt = "SIMHUM2"
 nSIMHUM=int(expt[6:])
 syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
 expt_dir  = datadirFN(expt)
@@ -147,6 +156,7 @@ for rep in range(REPS):
 
     Ts_timeseries = []
     Fr_timeseries = []
+    rule_change_times = []
 
     sec    = rep % 60
     srep = "0%d" % sec if sec < 10 else "%d" % sec
@@ -225,6 +235,7 @@ for rep in range(REPS):
 
         if N_strategies > 1:
             if strt_chg_times01[hds] == 1:
+                rule_change_times.append(hds)
                 candidate = _N.random.randint(0, Ts.shape[0])
                 while candidate == iCurrT:
                     candidate = _N.random.randint(0, Ts.shape[0])
@@ -331,6 +342,9 @@ for rep in range(REPS):
         tts[:, 2, 1] = tempL
     
         pklme["Ts_timeseries"] = tts
+        pklme["Fr_timeseries"] = Fr_timeseries
+        pklme["rule_change_times"] = _N.array(rule_change_times)
+        
     
     print(_N.sum(hnd_dat[:, 2]))
     print("-----------------   %s" % out_dir)

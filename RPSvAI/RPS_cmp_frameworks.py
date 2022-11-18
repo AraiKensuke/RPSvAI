@@ -15,7 +15,7 @@ from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mappi
 from RPSvAI.utils.dir_util import workdirFN, datadirFN
 import os
 import sys
-from sumojam.devscripts.cmdlineargs import process_keyval_args
+#from sumojam.devscripts.cmdlineargs import process_keyval_args
 import pickle
 import mne.time_frequency as mtf
 import GCoh.eeg_util as _eu
@@ -32,7 +32,7 @@ import RPSvAI.AIRPSfeatures as _aift
 
 import GCoh.eeg_util as _eu
 import matplotlib.ticker as ticker
-from statsmodels import robust
+#from statsmodels import robust
 
 __DSUWTL__ = 0
 __RPSWTL__ = 1
@@ -163,7 +163,7 @@ nI=1
 r1=0.4
 
 #_plt.ioff()
-process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
+#process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
 
 visit = 2
 visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
@@ -179,7 +179,7 @@ visits= [1, ]   #  if I want 1 of [1, 2], set this one to [1, 2]
 
 A1 = []
 show_shuffled = False
-process_keyval_args(globals(), sys.argv[1:])
+#process_keyval_args(globals(), sys.argv[1:])
 #######################################################
 
 win_type = 2   #  window is of fixed number of games
@@ -190,7 +190,9 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "SIMHUM3"
+expt = "SIMHUM2"
+#expt = "TMB2"
+
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
     #lm = depickle("predictAQ28dat/AQ28_vs_RPS_1_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth})
@@ -200,22 +202,21 @@ elif expt == "EEG1":
     #partIDs = ["20200109_1504-32"]
     #partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
     partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07", "20210526_1318-12", "20210526_1358-27", "20210526_1416-25", "20210526_1503-39"]
-elif expt == "SIMHUM3":
+elif expt[0:6] == "SIMHUM":
     partIDs = []
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0000-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0001-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0002-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0003-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0004-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0005-%s" % sec)
+
+    nSIMHUM=int(expt[6:])
+    syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
+    yr_dir    = datadirFN("%(e)s/%(syr)s" % {"e" : expt, "syr" : syr})
+
+    candidate_dirs = os.listdir(yr_dir)
+
+    for i in range(len(candidate_dirs)):
+        if candidate_dirs[i][0:8] == syr:
+            partIDs.append(candidate_dirs[i])
+        
     lm = {}
-    lm["filtdat"] = _N.arange(360)
+    lm["filtdat"] = _N.arange(len(candidate_dirs))
     TO = 300
 
 filtdat = lm["filtdat"]
@@ -676,6 +677,7 @@ _plt.savefig("Num_of_frameworks_comps_big_%d" % win)
 
 fig = _plt.figure(figsize=(12, 3))
 fig.add_subplot(1, 3, 1)
+_plt.suptitle(expt)
 _plt.hist(lo_allpcs, bins=_N.linspace(-1, 1, 51), color="grey", edgecolor="grey", density=True)
 _plt.title("components w/ small fluctuation")
 _plt.grid(ls=":", color="black")

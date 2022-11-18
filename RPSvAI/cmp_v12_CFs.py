@@ -64,20 +64,20 @@ def depickle(s):
           lm = pickle.load(f)
      return lm
 
-
-lm1 = depickle(workdirFN("shuffledCRs_5CFs_TMB2_3_1"))
-lm2 = depickle(workdirFN("shuffledCRs_5CFs_TMB2_3_2"))
+expt="SIMHUM3"
+lm1 = depickle(workdirFN("shuffledCRs_5CFs_%s_3_1") % expt)
+#lm2 = depickle(workdirFN("shuffledCRs_5CFs_TMB2_3_2"))
 filtdat = lm1["filtdat"]
 
 ind_of_1_unf = []
-for pID in lm2["partIDs"]:
+for pID in lm1["partIDs"]:
     index = lm1["partIDs"].index(pID)
     ind_of_1_unf.append(index)
 #ind_of_1 = _N.intersect1d(ind_of_1_unf, filtdat)
 ind_of_1 = _N.array(ind_of_1_unf)
 
 fr_cmp_fluc_rank1_1 = lm1["fr_cmp_fluc_rank1"]
-fr_cmp_fluc_rank1_2 = lm2["fr_cmp_fluc_rank1"]
+#fr_cmp_fluc_rank1_2 = lm2["fr_cmp_fluc_rank1"]
 
 
 pcs = _N.empty(len(ind_of_1))

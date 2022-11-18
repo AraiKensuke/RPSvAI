@@ -185,8 +185,8 @@ if data == "RAND":
 
 visit = 2
 visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
-#visit = 1
-#visits = [1]
+visit = 1
+visits = [1]
 #visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
     
 if data == "TMB2":
@@ -264,6 +264,9 @@ mst_var_DSUAIRPS = _N.empty(len(partIDs))
 
 gk = _Am.gauKer(1)
 gk /= _N.sum(gk)
+gk2 = _Am.gauKer(2)
+gk2 /= _N.sum(gk2)
+
 #gk = None
 
 UD_diff   = _N.empty((len(partIDs), 3))
@@ -559,6 +562,12 @@ L30  = 30
 not_outliers = []
 notmany_repeats = []
 pid = 0
+
+lm = depickle(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : data, "w" : win, "v" : visit}))
+ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
+ranks_of_lotsof0s = lm["fr_lotsof0s"]
+len1s = lm["len1s"]
+
 for partID in partIDs:
     pid += 1
     if (partID != "20210801_0015-00") and (partID != "20210801_0020-00") and (partID != "20211021_0130-00") and (partID != "20210924_0025-00") and (partID != "20211004_0015-00") and (partID != "20211018_0010-00"):
@@ -613,7 +622,7 @@ for partID in partIDs:
         AQ28scrs[pid-1], soc_skils[pid-1], rout[pid-1], switch[pid-1], imag[pid-1], fact_pat[pid-1] = _rt.AQ28("%(datadir)s/%(data)s/%(date)s/%(pID)s/AQ29.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : data, "datadir" : os.environ["TAISENDATA"]})
         ages[pid-1], gens[pid-1], Engs[pid-1] = _rt.Demo("%(datadir)s/%(data)s/%(date)s/%(pID)s/DQ1.txt" % {"date" : partIDs[pid-1][0:8], "pID" : partIDs[pid-1], "data" : data, "datadir" : os.environ["TAISENDATA"]})        
     
-    n_mouse, n_keys, mouse_resp_t, key_resp_t = _aift.resptime_aft_wtl(_hnd_dat, TO, pid, inp_meth, time_aft_win, time_aft_tie, time_aft_los)
+    n_mouse, n_keys, mouse_resp_t, key_resp_t, resp_time_all = _aift.resptime_aft_wtl(_hnd_dat, TO, pid, inp_meth, time_aft_win, time_aft_tie, time_aft_los)
     _aift.resptime_b4aft_wtl(_hnd_dat, TO, pid, inp_meth, time_b4aft_win_mn, time_b4aft_win_sd, time_b4aft_tie_mn, time_b4aft_tie_sd, time_b4aft_los_mn, time_b4aft_los_sd)
     
     if (n_mouse > 0) and (n_keys > 0) and (n_keys > 50) and (key_resp_t) < 300:
@@ -660,6 +669,17 @@ for partID in partIDs:
 
     dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvsDSUAIRPS, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
     maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
+
+    behv5   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.93, min_big_comps=3, flip_choose_components=False)
+
+    if behv5 is not None:
+        dbehv5  = _N.diff(behv5)            
+        maxs5 = _N.where((dbehv5[0:TO-11] >= 0) & (dbehv5[1:TO-10] < 0))[0] + (win//2)#  3 from label71            
+    
+        allInds = _N.arange(297)
+        followRuleT = resp_time_all[_N.setdiff1d(allInds, maxs)]
+        changeRuleT = resp_time_all[maxs]
+        print("%(f).1f %(c).1f" % {"c" : _N.mean(changeRuleT), "f" : _N.mean(followRuleT)})
     
     
     n_copies[pid-1] = _N.sum(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])

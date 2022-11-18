@@ -13,7 +13,7 @@ from scipy.signal import savgol_filter
 from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
 import os
 import sys
-from sumojam.devscripts.cmdlineargs import process_keyval_args
+#from sumojam.devscripts.cmdlineargs import process_keyval_args
 import pickle
 import mne.time_frequency as mtf
 import GCoh.eeg_util as _eu
@@ -159,7 +159,7 @@ thrI = 1
 nI=1
 r1=0.4
 
-process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
+#process_keyval_args(globals(), sys.argv[1:])   #  For when we run from cmd line
 
 #visit = 2
 #visits= [1, 2]   #  if I want 1 of [1, 2], set this one to [1, 2]
@@ -175,7 +175,7 @@ visits= [1, ]   #  if I want 1 of [1, 2], set this one to [1, 2]
 
 A1 = []
 show_shuffled = False
-process_keyval_args(globals(), sys.argv[1:])
+#process_keyval_args(globals(), sys.argv[1:])
 #######################################################
 
 win_type = 2   #  window is of fixed number of games
@@ -183,11 +183,13 @@ win_type = 2   #  window is of fixed number of games
 win     = 3
 smth    = 1
 label          = win_type*100+win*10+smth
-TO = 300
+TO = 150
 SHF_NUM = 0
 
-expt = "SIMHUM3"
-#expt = "TMB2"
+detected_rulechange_triggered = []
+expt = "SIMHUM2"
+expt = "TMB2"
+know_gt = False
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
 
@@ -198,24 +200,24 @@ elif expt == "EEG1":
     #partIDs = ["20200109_1504-32"]
     #partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
     partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07", "20210526_1318-12", "20210526_1358-27", "20210526_1416-25", "20210526_1503-39"]
-
-elif expt == "SIMHUM3":
+elif expt[0:6] == "SIMHUM":
     partIDs = []
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0000-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0001-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0002-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0003-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0004-%s" % sec)
-    for sec in secs_as_string(0, 60):
-        partIDs.append("20110103_0005-%s" % sec)
+
+    nSIMHUM=int(expt[6:])
+    syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
+    yr_dir    = datadirFN("%(e)s/%(syr)s" % {"e" : expt, "syr" : syr})
+
+    candidate_dirs = os.listdir(yr_dir)
+
+    for i in range(len(candidate_dirs)):
+        if candidate_dirs[i][0:8] == syr:
+            partIDs.append(candidate_dirs[i])
+        
     lm = {}
-    lm["filtdat"] = _N.arange(360)
+    lm["filtdat"] = _N.arange(len(candidate_dirs))
     TO = 300
+    know_gt = True
+    
 
 filtdat = lm["filtdat"]
 #filtdat = _N.array([8])
@@ -266,6 +268,8 @@ itis_cv    = _N.empty(len(partIDs))
 ilis_cv    = _N.empty(len(partIDs))
 isis_lv    = _N.empty(len(partIDs))
 isis_corr    = _N.empty(len(partIDs))
+rule_changes_in_context = _N.zeros((len(partIDs), TO), dtype=_N.int)
+detected_rule_changes_in_context = _N.zeros((len(partIDs), TO), dtype=_N.int)
 
 all_maxs  = []
 
@@ -350,7 +354,9 @@ for partID in partIDs:
     prob_mvsRPSAIRPS  = _prob_mvsRPSAIRPS[:, :, 0:TO - win]  #  is bigger than hand by win size    
 
     #stds_all_mdls[0] = _N.std(prob_mvs, axis=2)
-    
+
+    td0, start_time0, end_time0, UA0, cnstr0, inp_meth0, ini_percep0, fin_percep0, gt_dump0 = _rt.return_hnd_dat(partID, has_useragent=True, has_start_and_end_times=True, has_constructor=True, expt=expt, visit=visit, know_gt=know_gt)
+
     for SHF_NUM in range(SHUFFLES+1):
     #for SHF_NUM in range(70, 71):
         _prob_mvsDSUWTL = dmp["cond_probsDSUWTL"][SHF_NUM][:, strtTr:]
@@ -418,8 +424,8 @@ for partID in partIDs:
         #ranks_of_lotsof0s[pid-1, 0] = 0
         #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.6, min_big_comps=4, flip_choose_components=False)
         #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.5, min_big_comps=4, flip_choose_components=True)
-        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.94, min_big_comps=3, flip_choose_components=False)
-        #behv   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], _N.zeros((3, 3)), len1s[pid-1], big_percentile=0.95, min_big_comps=2)
+        behv   = _crut.get_dbehv_biggest_fluc([prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.94, min_big_comps=2, flip_choose_components=False)
+        behv5   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.94, min_big_comps=2, flip_choose_components=False)
 
 
 
@@ -436,13 +442,13 @@ for partID in partIDs:
         #dbehv, behv    = _crut.get_dbehv_combined([prob_mvs, prob_mvs_RPS, prob_mvs_DSUAIRPS], None, biggest=True, top_comps=4, use_sds=[sum_sd_DSUWTL[pid-1], sum_sd_RPSWTL[pid-1], sum_sd_DSUAIRPS[pid-1]])
         #maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
         """
-        maxima = _N.where((behv[0:-3] < behv[1:-2]) & (behv[1:-2] > behv[2:-1]))[0]
-        minima = _N.where((behv[0:-3] > behv[1:-2]) & (behv[1:-2] < behv[2:-1]))[0]
+        maxima = _N.where((behv5[0:-3] < behv5[1:-2]) & (behv5[1:-2] > behv5[2:-1]))[0]
+        minima = _N.where((behv5[0:-3] > behv5[1:-2]) & (behv5[1:-2] < behv5[2:-1]))[0]
         nMins = len(minima)
         nMaxs = len(maxima)        
     
-        start_thr = _N.sort(behv[minima + 1])[int(0.25*nMins)]  #  we don't want maxes to be below any mins
-        thr_max   = 0.5*(_N.max(behv[maxima]) - _N.min(behv[maxima])) + _N.min(behv[maxima]) 
+        start_thr = _N.sort(behv5[minima + 1])[int(0.25*nMins)]  #  we don't want maxes to be below any mins
+        thr_max   = 0.5*(_N.max(behv5[maxima]) - _N.min5(behv[maxima])) + _N.min(behv5[maxima]) 
 
         dthr      = (thr_max - start_thr) / 30.
 
@@ -470,8 +476,20 @@ for partID in partIDs:
             has_nonzero_CR_comps[pid-1] = 1
             #dbehv  = _N.diff(_N.convolve(behv, gk, mode="same")) #+ _N.diff(behv))
             dbehv  = _N.diff(behv)
+            dbehv5  = _N.diff(behv5)            
             maxs = _N.where((dbehv[0:TO-11] >= 0) & (dbehv[1:TO-10] < 0))[0] + (win//2)#  3 from label71
+            maxs5 = _N.where((dbehv5[0:TO-11] >= 0) & (dbehv5[1:TO-10] < 0))[0] + (win//2)#  3 from label71
+            detected_rule_changes_in_context[pid-1, maxs5] = 1
 
+            if know_gt:
+                rch01  = _N.zeros(TO, dtype=_N.int)
+                rch01[gt_dump0["rule_change_times"]]= 1
+                rule_changes_in_context[pid-1, gt_dump0["rule_change_times"]] = 1
+                for im in range(1, len(maxs5)-1):
+                    iRCT = maxs5[im]
+                    if (iRCT-12 > 0) and (iRCT+12) < TO:
+                        detected_rulechange_triggered.append(rch01[iRCT-12:iRCT+12+1])
+            
             for sh in range(1):
                 if sh > 0:
                     _N.random.shuffle(inds)
@@ -511,7 +529,7 @@ for partID in partIDs:
                 #fig.add_subplot(5, 5, pid)
                 #_plt.plot(_N.mean(avgs, axis=0))
 
-            isi   = _N.diff(maxs)
+            isi   = _N.diff(maxs5)
             pc, pv = rm_outliersCC_neighbors(isi[0:-1], isi[1:])
             #pc, pv = _ss.pearsonr(isi[0:-1], isi[1:])
             isis_corr[pid-1] = pc
@@ -694,23 +712,23 @@ for partID in partIDs:
 # data["avg"] = _N.mean(all_trg_trls, axis=0)
 # print(".................. all_trg_trls")
 # print(data["avg"])
-nzfiltdat = _N.intersect1d(_N.where(has_nonzero_CR_comps)[0], filtdat)
 
-"""
-for sud in ["isis", "isis_corr", "isis_cv", "isis_lv", "pfrm_change69"]:
-    #data[sud] = _N.empty((6, 2))
-    print("int stat------   %s" % sud)
-    exec("ist_ud = %s" % sud)
-    ist = -1
-    for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
-        ist += 1
-        exec("tar = %s" % star)
-        print("!!!!!  %s" % star)
-        pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
-        #if _N.abs(pc) > 0.15:
-        #data[sud][ist] = pc, pv
-        print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
-"""
+nzfiltdat = _N.intersect1d(_N.where(has_nonzero_CR_comps)[0], filtdat)
+if expt == "TMB2":
+    for sud in ["isis", "isis_corr", "isis_cv", "isis_lv"]:#, "pfrm_change69"]:
+        #data[sud] = _N.empty((6, 2))
+        print("int stat------   %s" % sud)
+        exec("ist_ud = %s" % sud)
+        ist = -1
+        for star in ["AQ28scrs", "soc_skils", "imag", "rout", "switch", "fact_pat"]:
+            ist += 1
+            exec("tar = %s" % star)
+            print("!!!!!  %s" % star)
+            pc, pv = _ss.pearsonr(ist_ud[nzfiltdat], tar[nzfiltdat])
+            #if _N.abs(pc) > 0.15:
+            #data[sud][ist] = pc, pv
+            print("%(pc).3f  %(pv).3f" % {"pc" : pc, "pv" : pv})
+
 
 # if os.access("Results_231/RC_all_combos.dmp", os.F_OK):
 #     lm = depickle("Results_231/RC_all_combos.dmp")
@@ -727,13 +745,58 @@ fig = _plt.figure(figsize=(7, 4))
 ts = _N.arange(-(t1-t0)//2+1, (t1-t0)//2+1)
 mnsig = _N.mean(all_avgs[nzfiltdat, 0], axis=0)
 _plt.suptitle(len(nzfiltdat))
-_plt.plot(ts, mnsig, color="black", lw=3)
-#_plt.plot(ts, mnsig, color="orange", lw=3)
+if expt == "TMB2":
+    _plt.plot(ts, mnsig, color="black", lw=3)
+else:
+    _plt.plot(ts, mnsig, color="orange", lw=3)
 _plt.grid()
-_plt.axvline(x=0, ls="--", color="grey")
+_plt.axvline(x=0, ls="--", color="grey", lw=4)
 _plt.xlabel("lagged games from rule change", fontsize=12)
 _plt.xticks(fontsize=11)
 _plt.yticks(fontsize=11)
 _plt.ylabel("win prob. - lose prob.", fontsize=12)
-_plt.ylim(-0.15, 0.05)
+#_plt.ylim(-0.12, 0.04)
+_plt.ylim(-0.3, -0.04)
 _plt.savefig("Rule-change_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=True)
+
+if know_gt:
+    A = _N.array(detected_rulechange_triggered)
+    num_GT_RCs = _N.sum(A, axis=0)
+    fig = _plt.figure(figsize=(5, 4))
+    #fig = _plt.figure(figsize=(9, 4))    
+    fig.add_subplot(1, 1, 1)
+    _plt.bar(_N.arange(-12, 13), num_GT_RCs, color="black")
+    _plt.axvline(x=0, ls="--")
+    _plt.xlabel("Lag from detected rulechange (games)")
+    _plt.ylabel("Number of known rulechanges at lag")
+    _plt.ylim(0, _N.max(num_GT_RCs)*1.1)
+    _plt.savefig("Rule-change_detect_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=True)
+    #fig.add_subplot(1, 2, 2)
+    #for i in range(
+
+    
+# for ig in range(5):
+#     nRCts = _N.where(rule_changes_in_context[ig] == 1)[0]
+#     nDRCts = _N.where(detected_rule_changes_in_context[ig] == 1)[0]
+#     _plt.scatter(nRCts, _N.ones(nRCts.shape[0]) + ig, color="black", s=8)
+#     _plt.scatter(nDRCts, _N.ones(nDRCts.shape[0]) + ig-0.2, color="grey", s=3)
+
+fig = _plt.figure(figsize=(11, 4))
+ax  = fig.add_subplot(1, 1, 1)
+ax.set_facecolor("#BBBBBB")
+for ig in range(10):
+    nRCts = _N.where(rule_changes_in_context[ig] == 1)[0]
+    nDRCts = _N.where(detected_rule_changes_in_context[ig] == 1)[0]
+    for i in range(len(nRCts)):
+        _plt.plot([nRCts[i], nRCts[i]], [ig, ig+0.8], color="black", lw=4)
+    for i in range(len(nDRCts)):
+        _plt.plot([nDRCts[i], nDRCts[i]], [ig+.1, ig+0.7], color="white", lw=2)
+_plt.xlim(-0.5, 300.5)
+_plt.xlabel("game #")
+_plt.ylabel("tournament #")
+_plt.savefig("Rule-change_in_context_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=False)
+
+# for ig in range(5):
+#     _plt.plot(rule_changes_in_context[ig] + ig*1.5, color="black", lw=3)
+#     _plt.plot(0.8*detected_rule_changes_in_context[ig] + ig*1.5, color="pink", lw=3)    
+

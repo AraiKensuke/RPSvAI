@@ -89,13 +89,13 @@ def next_hand(frmwk, Tmat, prev_hnd_wtl, prev_hnd, prev_ai_hnd):
                 print("shouldn't be here")
     elif frmwk == 4:   #  RPS_AIRPS
         rats = Tmat[prev_ai_hnd-1]
-        print("---------------------")
-        print(prev_ai_hnd)
-        print(rats)
+        #print("---------------------")
+        #print(prev_ai_hnd)
+        #print(rats)
         crats[1:4] = _N.cumsum(rats)
 
         rnd   = _N.random.rand()
-        print("prev AI %(ph)d    HP hand %(nh)d" % {"ph" : prev_ai_hnd, "nh" : (_N.where((rnd >= crats[0:-1]) & (rnd < crats[1:]))[0][0] + 1)})
+        #print("prev AI %(ph)d    HP hand %(nh)d" % {"ph" : prev_ai_hnd, "nh" : (_N.where((rnd >= crats[0:-1]) & (rnd < crats[1:]))[0][0] + 1)})
         return _N.where((rnd >= crats[0:-1]) & (rnd < crats[1:]))[0][0] + 1
 
         # RSP

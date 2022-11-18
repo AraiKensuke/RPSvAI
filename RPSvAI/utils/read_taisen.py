@@ -35,7 +35,6 @@ def return_hnd_dat(day_time, tr0=0, tr1=None, know_gt=False, flip_human_AI=False
     """
     starttime and endtime needed because filename date is when userID was crafted, but not the time RPS game was started.
     """
-    print("@@@@@@@@@@@@@@    return_hnd_dat   %s" % day_time)
     data_dir = "%(dd)s/%(ex)s" % {"dd" : _data_dir, "ex" : expt}
     baseDir = data_dir# if not know_gt else _simulation_data_dir
     day = day_time[0:8]
@@ -49,7 +48,7 @@ def return_hnd_dat(day_time, tr0=0, tr1=None, know_gt=False, flip_human_AI=False
     gt_dmp = None
     if know_gt:
         import pickle
-        print("************************   %(lid)s/%(v)d/block1_AI.dmp" % {"lid" : look_in_dir, "v" : visit})
+        #print("************************   %(lid)s/%(v)d/block1_AI.dmp" % {"lid" : look_in_dir, "v" : visit})
         with open("%(lid)s/%(v)d/block1_AI.dmp" % {"lid" : look_in_dir, "v" : visit}, "rb") as f:
             gt_dmp = pickle.load(f)
 
@@ -158,6 +157,7 @@ def return_hnd_dat(day_time, tr0=0, tr1=None, know_gt=False, flip_human_AI=False
     hnd_dat[:, 2] = wtl
     #hnd_dat[:, 3] = 0
     if expt != "TMB1":
+        print(gt_dmp)
         return hnd_dat, start, end, UA, cnstr, rec_input_method, rec_ini_percep, rec_fin_percep, gt_dmp
     else:
         return hnd_dat, start, end, UA, cnstr, rec_input_method, None, None, None

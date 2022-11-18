@@ -675,8 +675,9 @@ def resptime_aft_wtl(_hnd_dat, TO, pid, inp_meth, time_aft_win, time_aft_tie, ti
         mouseOffset = mouse_resp_t - key_resp_t
         n_mouse = len(mouse_inp)
         n_keys = len(key_inp)
-    
-    time_all             = _N.mean(resp_tms[tm_t0:tm_t1-1] - (1-inp_meth[tm_t0:tm_t1-1])*mouseOffset)
+
+    resp_time_all        = resp_tms[tm_t0:tm_t1-1] - (1-inp_meth[tm_t0:tm_t1-1])*mouseOffset        
+    time_all             = _N.mean(resp_time_all)
     
     winsS = _N.where(_hnd_dat[tm_t0:tm_t1-1, 2] == 1)[0]+tm_t0
     mn = _N.mean(resp_tms[winsS+1] - (1-inp_meth[winsS+1])*mouseOffset) / time_all
@@ -694,7 +695,7 @@ def resptime_aft_wtl(_hnd_dat, TO, pid, inp_meth, time_aft_win, time_aft_tie, ti
     sd = _N.std(resp_tms[tiesS+1] - (1-inp_meth[tiesS+1])*mouseOffset) / time_all    
     
     time_aft_tie[pid-1]  = sd
-    return n_mouse, n_keys, mouse_resp_t, key_resp_t
+    return n_mouse, n_keys, mouse_resp_t, key_resp_t, resp_time_all
 
 
 
