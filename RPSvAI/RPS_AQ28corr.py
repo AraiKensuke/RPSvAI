@@ -8,7 +8,6 @@ import scipy.io as _scio
 import scipy.stats as _ss
 import matplotlib.pyplot as _plt
 import RPSvAI.utils.read_taisen as _rd
-from filter import gauKer
 from scipy.signal import savgol_filter
 from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
 #import RPSvAI.skull_plot as _sp
@@ -16,7 +15,7 @@ import os
 import sys
 import pickle
 import mne.time_frequency as mtf
-from filter import gauKer
+#from filter import gauKer
 import GCoh.eeg_util as _eu
 #import RPSvAI.rpsms as rpsms
 
@@ -264,7 +263,7 @@ def rm_outliersCC(x, y):
 
 win_type = 2   #  window is of fixed number of games
 #win_type = 1  #  window is of fixed number of games that meet condition 
-win     = 6
+win     = 3
 smth    = 1
 visit   = 1
 #label          = win_type*100+win*10+smth

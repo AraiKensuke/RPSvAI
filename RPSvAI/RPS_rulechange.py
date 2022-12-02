@@ -183,7 +183,7 @@ win_type = 2   #  window is of fixed number of games
 win     = 3
 smth    = 1
 label          = win_type*100+win*10+smth
-TO = 150
+TO = 300
 SHF_NUM = 0
 
 detected_rulechange_triggered = []
@@ -755,8 +755,8 @@ _plt.xlabel("lagged games from rule change", fontsize=12)
 _plt.xticks(fontsize=11)
 _plt.yticks(fontsize=11)
 _plt.ylabel("win prob. - lose prob.", fontsize=12)
-#_plt.ylim(-0.12, 0.04)
-_plt.ylim(-0.3, -0.04)
+_plt.ylim(-0.12, 0.04)
+#_plt.ylim(-0.3, -0.04)
 _plt.savefig("Rule-change_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=True)
 
 if know_gt:
@@ -775,26 +775,21 @@ if know_gt:
     #for i in range(
 
     
-# for ig in range(5):
-#     nRCts = _N.where(rule_changes_in_context[ig] == 1)[0]
-#     nDRCts = _N.where(detected_rule_changes_in_context[ig] == 1)[0]
-#     _plt.scatter(nRCts, _N.ones(nRCts.shape[0]) + ig, color="black", s=8)
-#     _plt.scatter(nDRCts, _N.ones(nDRCts.shape[0]) + ig-0.2, color="grey", s=3)
 
-fig = _plt.figure(figsize=(11, 4))
-ax  = fig.add_subplot(1, 1, 1)
-ax.set_facecolor("#BBBBBB")
-for ig in range(10):
-    nRCts = _N.where(rule_changes_in_context[ig] == 1)[0]
-    nDRCts = _N.where(detected_rule_changes_in_context[ig] == 1)[0]
-    for i in range(len(nRCts)):
-        _plt.plot([nRCts[i], nRCts[i]], [ig, ig+0.8], color="black", lw=4)
-    for i in range(len(nDRCts)):
-        _plt.plot([nDRCts[i], nDRCts[i]], [ig+.1, ig+0.7], color="white", lw=2)
-_plt.xlim(-0.5, 300.5)
-_plt.xlabel("game #")
-_plt.ylabel("tournament #")
-_plt.savefig("Rule-change_in_context_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=False)
+    fig = _plt.figure(figsize=(11, 4))
+    ax  = fig.add_subplot(1, 1, 1)
+    ax.set_facecolor("#BBBBBB")
+    for ig in range(10):
+        nRCts = _N.where(rule_changes_in_context[ig] == 1)[0]
+        nDRCts = _N.where(detected_rule_changes_in_context[ig] == 1)[0]
+        for i in range(len(nRCts)):
+            _plt.plot([nRCts[i], nRCts[i]], [ig, ig+0.8], color="black", lw=4)
+        for i in range(len(nDRCts)):
+            _plt.plot([nDRCts[i], nDRCts[i]], [ig+.1, ig+0.7], color="white", lw=2)
+    _plt.xlim(-0.5, 300.5)
+    _plt.xlabel("game #")
+    _plt.ylabel("tournament #")
+    _plt.savefig("Rule-change_in_context_%(exp)s_%(w)d" % {"exp" : expt, "w" : win}, transparent=False)
 
 # for ig in range(5):
 #     _plt.plot(rule_changes_in_context[ig] + ig*1.5, color="black", lw=3)

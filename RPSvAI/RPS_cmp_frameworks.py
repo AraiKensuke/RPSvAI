@@ -190,8 +190,8 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-expt = "SIMHUM2"
-#expt = "TMB2"
+#expt = "SIMHUM2"
+expt = "TMB2"
 
 if expt == "TMB2":
     lm = depickle(workdirFN("AQ28_vs_RPS_%(v)d_%(wt)d%(w)d%(s)d.dmp" % {"v" : visit, "wt" : win_type, "w" : win, "s" : smth, "wd" : os.environ["RPSWORKDIR"]}))
@@ -514,8 +514,8 @@ for partID in partIDs:
 
                 #cmp_z1s[pid-1, ifr, ic, ia] = (stds[0] - _N.mean(stds[1:])) / _N.std(stds[1:])
                 #cmp_z1sZ[pid-1, ifr, ic, ia] = (stds[0] - _N.median(stds[1:])) / _N.std(stds[1:])
-                cmp_z1sZ[pid-1, ifr, ic, ia] = stds[0] / _N.median(stds[1:])
-                cmp_z1s[pid-1, ifr, ic, ia] = stds[0]
+                cmp_z1sZ[pid-1, ifr, ic, ia] = stds[0] / _N.mean(stds[1:])
+                cmp_z1s[pid-1, ifr, ic, ia] = stds[0] 
                 rnk1 = len(_N.where(stds[0] > stds[1:])[0])
                 for ist in range(SHUFFLES+1):
                     len0[ist] = len(_N.where(alls[ist, ic, ia] == 0)[0])
@@ -614,7 +614,7 @@ for partID in partIDs:
 
 
 dmpout = open(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : expt, "w" : win, "v" : visit}), "wb")
-pickle.dump({"z1s" : z1s, "fr_cmp_fluc_rank1" : fr_cmp_fluc_rank1, "filtdat" : filtdat, "SHUFFLES" : SHUFFLES, "partIDs" : partIDs, "fr_lotsof0s" : fr_lotsof0s, "len1s" : len1s}, dmpout, -1)
+pickle.dump({"z1s" : cmp_z1sZ, "fr_cmp_fluc_rank1" : fr_cmp_fluc_rank1, "filtdat" : filtdat, "SHUFFLES" : SHUFFLES, "partIDs" : partIDs, "fr_lotsof0s" : fr_lotsof0s, "len1s" : len1s}, dmpout, -1)
 dmpout.close()
 
 #SHUFFLES = SHUFFLES-1
@@ -662,16 +662,18 @@ _plt.xlabel("participant #", fontsize=14)
 fig.subplots_adjust(wspace=0.5, hspace=0.85, top=0.85, left=0.08, right=0.94)
 _plt.savefig("Num_of_frameworks_comps_big_%d" % win)
     
-# for ifr in range(5):
-#     print("--------   %s" % frameworks[ifr])
-#     for ic in range(3):
-#         for ia in range(3):
-#             print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
-#             for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
-#                 exec("tar = %s" % star)
-#                 pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
-#                 #pc, pv = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], AQ28scrs[filtdat])
-#                 print("pc %(pc).3f   pv %(pv).3f" % {"pc" : pc, "pv" : pv})
+for ifr in range(5):
+    print("--------   %s" % frameworks[ifr])
+    for ic in range(3):
+        for ia in range(3):
+            print("component   %(c)d %(a)d" % {"c" : ic, "a" : ia})
+            for star in ["soc_skils", "imag", "rout", "switch", "fact_pat", "AQ28scrs"]:
+                exec("tar = %s" % star)
+                #pc, pv = _ss.pearsonr(cmp_z1s[filtdat, ifr, ic, ia], tar[filtdat])
+                pc1, pv1 = _ss.pearsonr(fr_cmp_fluc_rank1[filtdat, ifr, ic, ia], tar[filtdat])
+                #pc0, pv0 = _ss.pearsonr(fr_lotsof0s[filtdat, ifr, ic, ia], tar[filtdat])
+                pc0, pv0 = _ss.pearsonr(cmp_z1sZ[filtdat, ifr, ic, ia], tar[filtdat])                
+                print("pc0 %(pc0).3f   pv0 %(pv0).3f      pc1 %(pc1).3f   pv1 %(pv1).3f" % {"pc0" : pc0, "pv0" : pv0, "pc1" : pc1, "pv1" : pv1})
 
 
 

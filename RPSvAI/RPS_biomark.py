@@ -204,7 +204,6 @@ show_shuffled = False
 win_type = 2   #  window is of fixed number of games
 #win_type = 1  #  window is of fixed number of games that meet condition 
 win     = 3
-#win     = 4
 smth    = 1
 #smth    = 3
 label          = win_type*100+win*10+smth
@@ -563,10 +562,10 @@ not_outliers = []
 notmany_repeats = []
 pid = 0
 
-lm = depickle(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : data, "w" : win, "v" : visit}))
-ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
-ranks_of_lotsof0s = lm["fr_lotsof0s"]
-len1s = lm["len1s"]
+# lm = depickle(workdirFN("shuffledCRs_5CFs_%(ex)s_%(w)d_%(v)d" % {"ex" : data, "w" : win, "v" : visit}))
+# ranks_of_cmps = lm["fr_cmp_fluc_rank1"]
+# ranks_of_lotsof0s = lm["fr_lotsof0s"]
+# len1s = lm["len1s"]
 
 for partID in partIDs:
     pid += 1
@@ -624,8 +623,9 @@ for partID in partIDs:
     
     n_mouse, n_keys, mouse_resp_t, key_resp_t, resp_time_all = _aift.resptime_aft_wtl(_hnd_dat, TO, pid, inp_meth, time_aft_win, time_aft_tie, time_aft_los)
     _aift.resptime_b4aft_wtl(_hnd_dat, TO, pid, inp_meth, time_b4aft_win_mn, time_b4aft_win_sd, time_b4aft_tie_mn, time_b4aft_tie_sd, time_b4aft_los_mn, time_b4aft_los_sd)
-    
-    if (n_mouse > 0) and (n_keys > 0) and (n_keys > 50) and (key_resp_t) < 300:
+
+    if (n_mouse > 0) and (n_keys > 0) and (key_resp_t) < 200:
+    #if (n_mouse > 0) and (n_keys > 0) and (n_keys > 50) and (key_resp_t) < 300:
         print("keyboard really short")
     else:
         resp_times_OK.append(pid-1)
@@ -670,16 +670,16 @@ for partID in partIDs:
     dbehv, behv    = _crut.get_dbehv_combined([prob_mvsDSUWTL, prob_mvsDSUAIRPS, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsRPSAIRPS], None, biggest=False)
     maxs = _aift.get_maxes(behv, thrs, thrI=1, nI=4, r1=0.2, win=3)
 
-    behv5   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.93, min_big_comps=3, flip_choose_components=False)
+    #behv5   = _crut.get_dbehv_biggest_fluc([prob_mvsDSUWTL, prob_mvsRPSWTL, prob_mvsRPSRPS, prob_mvsDSUAIRPS, prob_mvsRPSAIRPS], gk2, ranks_of_cmps[pid-1], ranks_of_lotsof0s[pid-1], len1s[pid-1], big_percentile=0.93, min_big_comps=3, flip_choose_components=False)
 
-    if behv5 is not None:
-        dbehv5  = _N.diff(behv5)            
-        maxs5 = _N.where((dbehv5[0:TO-11] >= 0) & (dbehv5[1:TO-10] < 0))[0] + (win//2)#  3 from label71            
+    # if behv5 is not None:
+    #     dbehv5  = _N.diff(behv5)            
+    #     maxs5 = _N.where((dbehv5[0:TO-11] >= 0) & (dbehv5[1:TO-10] < 0))[0] + (win//2)#  3 from label71            
     
-        allInds = _N.arange(297)
-        followRuleT = resp_time_all[_N.setdiff1d(allInds, maxs)]
-        changeRuleT = resp_time_all[maxs]
-        print("%(f).1f %(c).1f" % {"c" : _N.mean(changeRuleT), "f" : _N.mean(followRuleT)})
+    #     allInds = _N.arange(297)
+    #     followRuleT = resp_time_all[_N.setdiff1d(allInds, maxs)]
+    #     changeRuleT = resp_time_all[maxs]
+    #     print("%(f).1f %(c).1f" % {"c" : _N.mean(changeRuleT), "f" : _N.mean(followRuleT)})
     
     
     n_copies[pid-1] = _N.sum(_hnd_dat[1:, 0] == _hnd_dat[0:-1, 1])
@@ -1255,7 +1255,7 @@ feats_FCx = ["sum_sd_DSUWTL", "sum_sd_DSUAIRPS", "sum_sd_RPSWTL",
 feats_FRx = ["isis_lv", "isis_cv", "isis_corr", "isis"]
 feats_FRx = []
 feats_FTx = ["time_aft_win", "time_aft_los", "time_aft_tie", "time_b4aft_los_mn", "time_b4aft_los_sd", "time_b4aft_tie_mn", "time_b4aft_tie_sd", "time_b4aft_win_mn", "time_b4aft_win_sd"]
-feats_FTx = []
+#feats_FTx = []
 
 #features_cab1 = []#"sds00", "sds01", "sds02",
                  #"sds10", "sds11", "sds12",
@@ -1264,7 +1264,7 @@ feats_FTx = []
 
 #features_AI  = ["mn_diff_top2", "sd_diff_top2", "mnFt1", "mnFt2", "mnFt3", "mnFt4", "mnFt5", "mnFt6", "mnFt7", "mnFt8", "sdFt1", "sdFt3", "sdFt4", "sdFt5", "sdFt6", "sdFt7", "sdFt8", "aift1", "aift2", "aift3", "aift4", "aift5", "aift10", "AIent1", "AIent3", "AIent4", "AIent5", "AIent6", "AIent7", "AIent8", "FEAT1", "FEAT2", "FEAT3", "FEAT4", "FEAT5", "FEAT6", "FEAT7", "]
 feats_FAx  = ["mn_diff_top2", "sd_diff_top2", "mnFt1", "mnFt2", "mnFt3", "mnFt4", "mnFt5", "mnFt6", "mnFt7", "mnFt8", "sdFt1", "sdFt3", "sdFt4", "sdFt5", "sdFt6", "sdFt7", "sdFt8", "aift1", "aift2", "aift3", "aift4", "aift5", "aift10", "aift11", "aift12", "aift13", "aift14", "aift15", "aift16", "aift17", "aift18", "aift19", "aift20", "aift21", "aift22", "aift23", "aift24", "AIent1", "AIent3", "AIent4", "AIent5", "AIent6", "AIent7", "AIent8", "s_rps0", "s_rps1", "s_rps2"]
-feats_FAx = []
+#feats_FAx = []
 
 #features_cab = ["moresimV4"]
 #    "m_BW", "m_BT", "m_BL", "sd_MW", 

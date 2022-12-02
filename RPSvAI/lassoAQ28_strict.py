@@ -14,7 +14,7 @@ from sklearn.linear_model import RANSACRegressor
 from sklearn.linear_model import TheilSenRegressor
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import LassoCV
-from statsmodels.stats.outliers_influence import variance_inflation_factor
+#from statsmodels.stats.outliers_influence import variance_inflation_factor
 import sklearn.preprocessing as _skp
 import pickle
 import RPSvAI.utils.cv_funcs as cvf
