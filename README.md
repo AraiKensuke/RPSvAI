@@ -1,5 +1,5 @@
 
-Code for paper Deviation from [Nash mixed equilibrium in repeated rock-paper-scissors, K. Arai, S. Jacob., A. Widge, and A. Yousefi, Scientific Reports 2025].(https://www.nature.com/articles/s41598-025-95444-6)
+Code for paper [Deviation from Nash mixed equilibrium in repeated rock-paper-scissors, K. Arai, S. Jacob., A. Widge, and A. Yousefi, Scientific Reports 2025.](https://www.nature.com/articles/s41598-025-95444-6)
 
 1)  Download zip file from repository.
 Creates RPSvAI-main
