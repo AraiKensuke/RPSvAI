@@ -1,8 +1,14 @@
 
 Code for paper [Deviation from Nash mixed equilibrium in repeated rock-paper-scissors, K. Arai, S. Jacob., A. Widge, and A. Yousefi, Scientific Reports 2025.](https://www.nature.com/articles/s41598-025-95444-6)
 
-1)  Download zip file from repository.
-Creates RPSvAI-main
+1)  Install Anaconda or Miniconda.
+
+2)  Download zip file from repository.
+   Choose or create directory to unpack: `INSTALLDIR`.  Unpacking zip file in this directory creates RPSvAI-main folder in `INSTALLDIR`.
+
+3)  `conda create -f $INSTALLDIR/RPSvAI-main/environment.yml`
+
+Now 
 
 2)  Environment variables to set.
 TAISENDATA
