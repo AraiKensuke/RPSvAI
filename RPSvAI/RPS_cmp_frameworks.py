@@ -159,15 +159,6 @@ r1=0.4
 
 visit = 1
 visits= [1, ]   #  if I want 1 of [1, 2], set this one to [1, 2]
-#visit = 2
-#visits= [1,2]   #  if I want 1 of [1, 2], set this one to [1, 2]
-    
-# if data == "TMB2":
-#     dates = _rt.date_range(start='7/13/2021', end='12/30/2021')
-#     partIDs, dats, cnstrs = _rt.filterRPSdats(data, dates, visits=visits, domainQ=(_rt._TRUE_ONLY_ if look_at_AQ else _rt._TRUE_AND_FALSE_), demographic=_rt._TRUE_AND_FALSE_, mentalState=_rt._TRUE_AND_FALSE_, min_meanIGI=500, max_meanIGI=15000, minIGI=20, maxIGI=30000, MinWinLossRat=0.35, has_useragent=True, has_start_and_end_times=True, has_constructor=True, blocks=1)
-#     #partIDs, dats, cnstrs = _rt.filterRPSdats(data, dates, visits=[1], domainQ=(_rt._TRUE_ONLY_ if look_at_AQ else _rt._TRUE_AND_FALSE_), demographic=_rt._TRUE_AND_FALSE_, mentalState=_rt._TRUE_AND_FALSE_, min_meanIGI=800, max_meanIGI=8000, minIGI=200, maxIGI=30000, MinWinLossRat=0.4, has_useragent=True, has_start_and_end_times=True, has_constructor=True, blocks=1)
-#     ####  use this for reliability
-#     #partIDs, dats, cnstrs = _rt.filterRPSdats(data, dates, visits=visits, domainQ=(_rt._TRUE_AND_FALSE_ if look_at_AQ else _rt._TRUE_AND_FALSE_), demographic=_rt._TRUE_AND_FALSE_, mentalState=_rt._TRUE_AND_FALSE_, min_meanIGI=500, max_meanIGI=8000, minIGI=50, maxIGI=30000, MinWinLossRat=0.4, has_useragent=True, has_start_and_end_times=True, has_constructor=True, blocks=1)
 
 A1 = []
 show_shuffled = False
@@ -182,14 +173,7 @@ label          = win_type*100+win*10+smth
 TO = 300
 SHF_NUM = 0
 
-#expt = "SIMHUM3"
-#expt = "WPI"
-
 expt = "TMB2"
-#expt = "CogWeb"
-#expt = "TMBCW"
-#expt = "KENSAMJAMES"
-
 
 svisits =str(visits).replace(" ", "").replace("[", "").replace("]", "")
 filtdat_okgames = None
@@ -207,65 +191,6 @@ if expt == "TMBCW":
     partIDs         = lm["partIDs_okgames"]
     filtdat_okgames = lm["filtdat_okgames"]
     TO = 300
-    
-if expt == "CogWeb":
-    lm = {}
-    #dates = _rt.date_range(start='2/25/2024', end='10/30/2024')
-    dates = _rt.date_range(start='2/25/2024', end='10/30/2028')
-    #partIDs, dats, cnstrs, has_domainQs, has_domainQs_wkeys = _rt.filterRPSdats(expt, dates, visits=visits, domainQ=(_rt._TRUE_AND_FALSE_), demographic=_rt._TRUE_AND_FALSE_, mentalState=_rt._TRUE_AND_FALSE_, min_meanIGI=500, max_meanIGI=20000, minIGI=10, maxIGI=50000, MinWinLossRat=0.2, has_useragent=True, has_start_and_end_times=True, has_constructor=True, blocks=1)
-    partIDs, dats, cnstrs, has_domainQs, has_domainQs_wkeys = _rt.filterRPSdats(expt, dates, visits=visits, domainQ=(_rt._TRUE_AND_FALSE_), demographic=_rt._TRUE_AND_FALSE_, mentalState=_rt._TRUE_AND_FALSE_, min_meanIGI=400, max_meanIGI=20000, minIGI=10, maxIGI=30000, MinWinLossRat=0.2, has_useragent=True, has_start_and_end_times=True, has_constructor=True, blocks=1)
-    lm["filtdat"] = _N.arange(len(partIDs))
-    TO = 300
-    print(len(partIDs))
-if expt == "KEN":
-    #partIDs = ["20200108_1703-13", "20200109_1504-32"]
-    #partIDs = ["20200109_1504-32"]
-    partIDs = ["20200108_1703-13"]
-    lm = {}
-    lm["filtdat"] = _N.arange(len(partIDs))
-    TO = 440
-elif expt == "WPI":
-    #partIDs = ["20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
-    partIDs = ["20210526_1318-12",]
-    TO = 300
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    lm = {}
-    lm["filtdat"] = _N.arange(len(partIDs))
-    partIDs_okgames = partIDs
-    #TO = 440
-if expt == "SAM":
-    partIDs = ["20201121_1959-30", "20201121_2131-38", "20201122_1108-25"]
-    lm = {}
-    lm["filtdat"] = _N.arange(len(partIDs))
-    TO = 290
-if expt == "KENSAMJAMES":
-    partIDs = ["20200101_1703-13", "20200102_1504-32", "20200103_1959-30", "20200103_2131-38", "20200104_1108-25", "20200105_1318-12", "20200105_1358-27"]
-    lm = {}
-    lm["filtdat"] = _N.arange(len(partIDs))
-    TO = 290
-elif expt == "EEG1":
-    #partIDs = ["20200109_1504-32"]
-    #partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07"]
-    partIDs = ["20210606_1237-17", "20210609_1230-28", "20210609_1248-16", "20210609_1321-35", "20210609_1517-23", "20210609_1747-07", "20210526_1318-12", "20210526_1358-27", "20210526_1416-25", "20210526_1503-39"]
-elif expt[0:6] == "SIMHUM":
-    partIDs = []
-
-    nSIMHUM=int(expt[6:])
-    syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
-    yr_dir    = datadirFN("%(e)s/%(syr)s" % {"e" : expt, "syr" : syr})
-
-    candidate_dirs = os.listdir(yr_dir)
-
-    for i in range(len(candidate_dirs)):
-        if candidate_dirs[i][0:8] == syr:
-            partIDs.append(candidate_dirs[i])
-    partIDs_okgames = partIDs
-        
-    lm = {}
-    lm["filtdat"] = _N.arange(len(candidate_dirs))
-    TO = 300
-
-    
 
 filtdat = lm["filtdat"]
 
@@ -358,19 +283,13 @@ stds        = _N.zeros((len(partIDs), 3, SHUFFLES+1, 3, 3, ))
 stds12      = _N.zeros((len(partIDs), 3, 2, SHUFFLES+1, 3, 3))
 
 thrs = _N.empty(len(partIDs), dtype=_N.int32)
-#stds      = _N.zeros((len(partIDs), 3, SHUFFLES+1))
-#stdsDSUWTL      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
-#stdsRPSWTL      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
-#stdsDSURPS      = _N.zeros((len(partIDs), 3, 3, 3, SHUFFLES+1))
 
 marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 
 frameworks   = ["DSUWTL", "RPSWTL",
-#                "RPSRPS", "LCBRPS",
                 "DSURPS", "LCBRPS",
                 "DSUAIRPS", "LCBAIRPS"]
 frameworks_p = ["p(DSU | WTL)", "p(RPS | WTL)",
-#                "p(RPS | RPS)", "p(LCB | RPS)",
                 "p(DSU | RPS)", "p(LCB | RPS)",
                 "p(DSU | AI_RPS)", "p(LCB | AI_RPS)"]
 

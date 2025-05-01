@@ -18,16 +18,13 @@ win_type = 2  #  window is of fixed number of games that meet condition
 wins= 3
 gk_w = 1
 
-visit = 1
-visits=[1]
-#visits=[2,]
-#visits=[2]
+visit = 1     
+visits=[1]   #  visits=[1, 2] = data with same paticipant doing 2 games, in this case visit=1 or 2 to calculate for 
 
 #  These are ParticipantIDs.
 
 flip_HUMAI=False
 expt="TMB2"
-#expt="SIMHUM47"
 datetms = []
 #fp = open("%(f)sfns_%(v)d.txt" % {"f" : expt, "v" : visit}, "r")
 if expt=="TMB2":
@@ -43,13 +40,6 @@ if expt=="CogWeb":
         datetms.append(fn.rstrip())
     fp.close()
 
-if expt=="TMBCW":
-    fp = open("%(e)sfns_%(v)s.txt" % {"e" : expt, "v" : str(visits)}, "r")
-    contents = fp.readlines()
-    for fn in contents:
-        datetms.append(fn.rstrip())
-    fp.close()
-    
 if expt[0:6] == "SIMHUM":
     nSIMHUM=int(expt[6:])
     syr    = "201101%s" % ("0%d" % nSIMHUM if nSIMHUM < 10 else str(nSIMHUM))
@@ -61,30 +51,6 @@ if expt[0:6] == "SIMHUM":
     for i in range(len(candidate_dirs)):
         if candidate_dirs[i][0:8] == syr:
             datetms.append(candidate_dirs[i])
-if expt == "KEN":
-    datetms.append("20200108_1703-13")
-    datetms.append("20200109_1504-32")
-if expt == "SAM":
-    datetms.append("20201121_1959-30")
-    datetms.append("20201121_2131-38")
-    datetms.append("20201122_1108-25")
-if expt == "WPI":
-    datetms.append("20210526_1318-12")
-    
-    # datetms.append("20210609_1230-28")
-    # datetms.append("20210609_1248-16")
-    # datetms.append("20210609_1321-35")
-    # datetms.append("20210609_1517-23")
-    # datetms.append("20210609_1747-07")
-if expt == "KENSAMJAMES":
-    # datetms.append("20200101_1703-13")
-    # datetms.append("20200102_1504-32")
-    # datetms.append("20200103_1959-30")
-    # datetms.append("20200103_2131-38")
-    # datetms.append("20200104_1108-25")    
-    datetms.append("20200105_1318-12")
-    datetms.append("20200105_1358-27")    
-
 
 def calc_for_date(idat):
     datetm = datetms[idat]
@@ -126,8 +92,6 @@ def calc_for_date(idat):
     if win_type == 1:
         ngsDSUWTL, ngsRPSWTL, ngsDSURPS, ngsDSUAIRPS, all_tds, TGames  = empirical.empirical_NGS(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_HUMAI, expt=expt, visit=visit, dither_unobserved=False)
     elif win_type == 2:
-        #ngsDSUWTL, ngsRPSWTL, ngsDSURPS, ngsDSUAIRPS, ngsRPSRPS, ngsRPSAIRPS, ngsLCBAIRPS, ngsLCBRPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_human_AI, expt=expt, visit=visit, atmidwin=True)
-        #ngsDSUWTL, ngsRPSWTL, ngsRPSRPS, ngsLCBRPS, ngsDSUAIRPS, ngsLCBAIRPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_HUMAI, expt=expt, visit=visit, atmidwin=True)
         ngsDSUWTL, ngsRPSWTL, ngsDSURPS, ngsLCBRPS, ngsDSUAIRPS, ngsLCBAIRPS, all_tds, TGames  = empirical.empirical_NGS_concat_conds(datetm, win=wins, SHUF=SHUFFLES, flip_human_AI=flip_HUMAI, expt=expt, visit=visit, atmidwin=True)
         #ngsDSURPS= _N.array(ngsRPSRPS)
         # R|r -> S|r      P|r -> U|r       S|r -> D|r
