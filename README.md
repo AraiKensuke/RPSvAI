@@ -39,11 +39,11 @@ In addition to human subject data, we included simulation code for validating ou
 
 #  Analysis (human subjects only)
 #  Preliminary analysis of test-retest-reliability  (15 participants).   Re-run 5), but with settings edited
-`$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability.py`
+`$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability.py`\
 `$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability_shuffle.py`
 
 #  Correlation and predictability of AQ28 subscores using RPS behavioral features.
-`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_v6.py`
+`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_v6.py`\
 `$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_report.py`
 
 visit=1
