@@ -8,20 +8,24 @@ Code for paper [Deviation from Nash mixed equilibrium in repeated rock-paper-sci
 
 3)  `conda create -f $INSTALLDIR/RPSvAI-main/environment.yml` to create environment to run code.
 
-4)  Folder `$INSTALLDIR/RPSvAI-main/DATA` contains anonymized human vs AI RPS data.  In each directory organized by collection date, there are 1 or more directories called \
-    `$INSTALLDIR/RPSvAI-main/DATA/TMB2/YYYYMMDD/YYYYMMDD-HHMM-SS/x`, \
-    where x=1, 2, ... are the game number (each game 300 rounds) for this participant.  Under this directory, there is a file called block1_AI.dat, a flat text file containing game data.
-
-5)  Environment variables to set.\
+4)  Environment variables to set.\
 `TAISENDATA=$INSTALLDIR/DATA`\
 `RPSWORKDIR=$INSTALLDIR/WorkDir`\
 `RPSOUTPUTDIR=$INSTALLDIR/OutDir`
 
-3)  Create conda environment
+5)  Folder `$INSTALLDIR/RPSvAI-main/DATA` contains anonymized human vs AI RPS data from TestMyBrain.org-hosted web-based experiment.  In each directory organized by collection date, there are 1 or more directories called \
+    `$INSTALLDIR/RPSvAI-main/DATA/TMB2/YYYYMMDD/YYYYMMDD-HHMM-SS/x`, \
+    where x=1, 2, ... are the game number (each game 300 rounds) for this participant.  Under this directory, there is a file called block1_AI.dat, a flat text file containing game data.
 
-4)  Create simulated data
+#  Analysis
+The same code is used to analyze the 1st and 2nd run (< 20 subjects) data of human subjects vs AI RPS, and data generated in simulation vs AI RPS.  Some subjects completed both the game and the AQ28 questionnaire, and some subjects also appeared to not be engaged during the game (ie making responses too quickly suggests mashing keyboard).  There is a 2-step filtering mechanism to remove these subjects for analysis.
+##  Human subject data
+Data collected from TestMyBrain.org-hosted experiment reides in 
+#  Creating simulated data.
+We included simulation code for validating our analysis.  
 simulation/simulate_human_JS_5CFs
 
+#  Analyzing human RPS data
 5)  Analyze Human RPS data
 ### calculate the conditional response probabilities
 calcCR.py
