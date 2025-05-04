@@ -23,7 +23,7 @@ xx
 In addition to human subject data, we included simulation code for validating our analysis code.  
 `$INSTALLDIR/RPSvAI-main/RPSvAI/simulation/simulate_human_JS_5CFs.py` allows users to define the repertoire of rules, the switching time intervals etc, and generate games played against the same AI human subjects faced.  The data is given a name `expt=` line in the code.  Setting this and running the simulation will create folder `$INSTALLDIR/RPSvAI-main/DATA/SIMHUM`, where x is an integer < 100 chosen by the user and speficied in `$INSTALLDIR/RPSvAI-main/RPSvAI/simulation/simulate_human_JS_5CFs.py`.  Data file stored in this folder with generated YYYYMMDD and HHMM-SS to make files that are in the same format as data collected from humans.
 
-#  Analysis
+#  Calculate featurers of behavior used in analysis
 ### calculate the time-dependent conditional response probabilities under each of the 6x9 = 54 possible rules.
 `$INSTALLDIR/RPSvAI-main/RPSvAI/calcCR.py`
 calculates CR probability calculated in sliding windows.  In paper, the parameters used were `win_type=2, wins=3, gk=1`
@@ -45,7 +45,7 @@ Calculate Fig.5.  Setting `expt` to `TMB2` will use human vs AI data, `SIMHUMxx`
 `$INSTALLDIR/RPSvAI-main/RPSvAI/clusterSDS.py`.  Recreates Fig. 4C.
 
 #  Analysis (human subjects only)
-#  Preliminary analysis of test-retest-reliability  (15 participants).   Re-run 5), but with settings edited
+###  Preliminary analysis of test-retest-reliability  (15 participants).   Re-run 5), but with settings edited
 `$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability.py`\
 `$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability_shuffle.py`
 
@@ -64,10 +64,10 @@ run analysis of data of 2nd game where player played at least 2 300-round games,
 `visit=2`\
 `visits=[1, 2]`
 
-#  Correlation and predictability of AQ28 subscores using RPS behavioral features.
+###  Correlation and predictability of AQ28 subscores using RPS behavioral features.
 `$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_v6.py`\
 `$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_report.py`
 
-#  Create simulated game data
+#  Create simulated game data.  
 `$INSTALLDIR/RPSvAI-main/RPSvAI/simulation/janken_simulate_human_JS_5CFs.py`
-Specify rules used in rule-changing simulation against AI.  Use this data for validation of 2D mapping results, and rule-change detection.
+Specify rules used in rule-changing simulation against AI.  Use this data for validation of 2D mapping results (biased distribution of points results when a few similar rulesets used among all participants), and whether rule-changes can be detected.
