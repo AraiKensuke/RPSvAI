@@ -2,7 +2,6 @@ import RPSvAI.utils.read_taisen as _rt
 import numpy as _N
 import RPSvAI.utils.misc as _Am
 #from filter import gauKer
-import RPSvAI.constants as _AIconst
 
 ####################################
 ####  DSUWTL
