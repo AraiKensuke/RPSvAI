@@ -318,7 +318,7 @@ correct_ngames = []
 correct_ngames_okgames = []
 
 sFlipped="_flipped" if flip_HUMAI else ""
-#lm = depickle(workdirFN("shuffledCRs_5CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : data, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
+#lm = depickle(workdirFN("shuffledCRs_6CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : data, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
 #ranks_of_cmps1 = lm["fr_cmp_fluc_rank1"]
 #ranks_of_cmps2 = lm["fr_cmp_fluc_rank2"]
 

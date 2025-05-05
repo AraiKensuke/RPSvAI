@@ -29,7 +29,7 @@ expt="TMB2"
 #expt="CogWeb"
 #expt="SIMHUM80"
 #expt="SIMHUM51"
-lm = depickle(workdirFN("shuffledCRs_5CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
+lm = depickle(workdirFN("shuffledCRs_6CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
 lmF = depickle(workdirFN("%(ex)s_AQ28_vs_RPS_features%(flp)s_1_of_1_%(lb)s.dmp" % {"lb" : label, "flp" : sFlipped, "ex" : expt}))
 
 #filtdat = lmF["filtdat_okgames"]

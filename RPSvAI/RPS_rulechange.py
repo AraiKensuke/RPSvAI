@@ -360,7 +360,7 @@ marginalCRs = _N.empty((len(partIDs), SHUFFLES, 3, 3))
 # sum_sd_DSUAIRPS = rebuild_sds_array(len(partIDs), lm, "sum_sd_DSUAIRPS")
 
 sFlipped  = "_flipped" if flip_HUMAI else ""
-lm = depickle(workdirFN("shuffledCRs_5CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
+lm = depickle(workdirFN("shuffledCRs_6CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}))
 ranks_of_cmps = lm["fr_cmp_fluc_rank2"]
 cmpZs = lm["z1s"]
 ranks_of_lotsof0s = lm["fr_lotsof0s"]

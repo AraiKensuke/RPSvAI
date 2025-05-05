@@ -485,7 +485,7 @@ for partID in partIDs:#_okgames:
 
             
 sFlipped = "_flipped" if flip_HUMAI else ""
-dmpout = open(workdirFN("shuffledCRs_5CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}), "wb")
+dmpout = open(workdirFN("shuffledCRs_6CFs%(flp)s_%(ex)s_%(w)d_%(v)d_%(vs)s" % {"ex" : expt, "w" : win, "v" : visit, "vs" : svisits, "flp" : sFlipped}), "wb")
 if filtdat_okgames is not None:
     pickle.dump({"z1s" : cmp_z1sZ, "cv_onrule_rank" : cv_onrule_rank, "cv_offrule_rank" : cv_offrule_rank, "fr_clumped1s" : fr_clumped1s, "fr_clumped0s" : fr_clumped0s, "fr_cmp_fluc_rank1" : fr_cmp_fluc_rank1, "fr_cmp_fluc_rank2" : fr_cmp_fluc_rank2, "filtdat" : filtdat, "filtdat_okgames" : filtdat_okgames, "SHUFFLES" : SHUFFLES, "partIDs" : partIDs, "fr_lotsof0s" : fr_lotsof0s, "fr_lotsof1s" : fr_lotsof1s, "fr_lotsof1zs" : fr_lotsof1zs, "len1s" : len1s}, dmpout, -1)
 else:

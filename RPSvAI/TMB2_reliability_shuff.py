@@ -59,8 +59,8 @@ outdir = "Results_%(wt)d%(w)d%(s)d" % {"wt" : win_type, "w" : win, "s" : smth}
 lm1 = depickle(workdirFN("TMB2_AQ28_vs_RPS_features_1_of_1,2_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth}))
 lm2 = depickle(workdirFN("TMB2_AQ28_vs_RPS_features_2_of_1,2_%(wt)d%(w)d%(s)d.dmp" % {"wt" : win_type, "w" : win, "s" : smth}))
 
-lmsh1 = depickle(workdirFN("shuffledCRs_5CFs_TMB2_%(w)d_1_1,2" % {"w" : win}))
-lmsh2 = depickle(workdirFN("shuffledCRs_5CFs_TMB2_%(w)d_2_1,2" % {"w" : win}))
+lmsh1 = depickle(workdirFN("shuffledCRs_6CFs_TMB2_%(w)d_1_1,2" % {"w" : win}))
+lmsh2 = depickle(workdirFN("shuffledCRs_6CFs_TMB2_%(w)d_2_1,2" % {"w" : win}))
 
 filtdat1 = lm1["filtdat_okgames"]
 filtdat2 = lm2["filtdat_okgames"]

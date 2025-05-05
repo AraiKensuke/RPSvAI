@@ -28,7 +28,7 @@ TO=300
 
 flip_HUMAI = False
 sFlipped   = "_flipped" if flip_HUMAI else ""
-lmTMBCW = depickle("/home_local/arai/Projects/RPSvAI/WorkDir/shuffledCRs_5CFs_TMBCW_3_1_1")
+lmTMBCW = depickle("/home_local/arai/Projects/RPSvAI/WorkDir/shuffledCRs_6CFs_TMBCW_3_1_1")
 lmF = depickle(workdirFN("TMBCW_AQ28_vs_RPS_features%(flp)s_1_of_1_%(lb)s.dmp" % {"lb" : label, "flp" : sFlipped}))
 lmScrs = depickle("/home_local/arai/Projects/RPSvAI/WorkDir/TMBCW_AQ28_vs_RPS_features%(flp)s_1_of_1_231.dmp" % {"flp" : sFlipped})
 filtdat     = lmF["filtdat"]
