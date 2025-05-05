@@ -2,7 +2,6 @@ import RPSvAI.models.empirical as empirical
 import RPSvAI.utils.misc as _Am
 import numpy as _N
 import matplotlib.pyplot as _plt
-import GCoh.eeg_util as _eu
 import RPSvAI.utils.read_taisen as _rt
 from RPSvAI.utils.dir_util import workdirFN, datadirFN
 import os

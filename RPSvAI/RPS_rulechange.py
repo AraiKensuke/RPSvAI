@@ -11,23 +11,18 @@ import matplotlib.pyplot as _plt
 import RPSvAI.utils.read_taisen as _rd
 import RPSvAI.utils.misc as _Am
 from scipy.signal import savgol_filter
-from GCoh.eeg_util import unique_in_order_of_appearance, increasing_labels_mapping, rmpd_lab_trnsfrm, find_or_retrieve_GMM_labels, shift_correlated_shuffle, shuffle_discrete_contiguous_regions, mtfftc
 import os
 import sys
 #from sumojam.devscripts.cmdlineargs import process_keyval_args
 import pickle
 import mne.time_frequency as mtf
-import GCoh.eeg_util as _eu
 #import RPSvAI.rpsms as rpsms
-import GCoh.preprocess_ver as _ppv
 
 from RPSvAI.utils.dir_util import workdirFN, datadirFN
-import GCoh.datconfig as datconf
 import RPSvAI.models.CRutils as _crut
 from sklearn.decomposition import PCA
 import RPSvAI.AIRPSfeatures as _aift
 
-import GCoh.eeg_util as _eu
 import matplotlib.ticker as ticker
 
 __1st__ = 0
