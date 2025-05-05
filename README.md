@@ -25,6 +25,7 @@ In addition to human subject data, we included simulation code for validating ou
 
 #  Calculate featurers of behavior used in analysis
 ### calculate the time-dependent conditional response probabilities under each of the 6x9 = 54 possible rules.
+Make directory
 `$INSTALLDIR/RPSvAI-main/RPSvAI/calcCR.py`
 calculates CR probability calculated in sliding windows.  In paper, the parameters used were `win_type=2, wins=3, gk=1`
 Outputs pickle files
@@ -43,13 +44,20 @@ Calculate Fig.5.  Setting `expt` to `TMB2` will use human vs AI data, `SIMHUMxx`
 `$INSTALLDIR/RPSvAI-main/RPSvAI/patternCFs.py`.  Recreates Fig. 4B.
 ### project features of rulechange timeseries of all subjects to 2D
 `$INSTALLDIR/RPSvAI-main/RPSvAI/clusterSDS.py`.  Recreates Fig. 4C.
+###  Correlation and predictability of AQ28 subscores using RPS behavioral features.
+Recreates Fig. 7.
+`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_v6.py`\
+`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_report.py`
 
 #  Analysis (human subjects only)
 ###  Preliminary analysis of test-retest-reliability  (15 participants).   Re-run 5), but with settings edited
 `$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability.py`\
 `$INSTALLDIR/RPSvAI-main/RPSvAI/TMB2_reliability_shuffle.py`
 
-For analysis of data where player played at least 1 300-round game, use parameters.
+The above scripts check that the measured features among 15 participants who played 2 separate games of 300-rounds each are stable across the 2 measurements, Fig. 6.
+
+calcCR.py, RPS_features.py, RPS_cmp_frameworks.py need to be run,this time with the following parameters:
+For analysis of data where player played at least 1 300-round game, use parameters.  (This has already been done)
 
 `visit=1`\
 `visits=[1]`
@@ -64,9 +72,6 @@ run analysis of data of 2nd game where player played at least 2 300-round games,
 `visit=2`\
 `visits=[1, 2]`
 
-###  Correlation and predictability of AQ28 subscores using RPS behavioral features.
-`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_v6.py`\
-`$INSTALLDIR/RPSvAI-main/RPSvAI/lassoAQ28_report.py`
 
 #  Create simulated game data.  
 `$INSTALLDIR/RPSvAI-main/RPSvAI/simulation/janken_simulate_human_JS_5CFs.py`
