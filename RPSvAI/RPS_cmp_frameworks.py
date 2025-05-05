@@ -24,7 +24,7 @@ import GCoh.preprocess_ver as _ppv
 #from RPSvAI.utils.dir_util import getResultFN
 import GCoh.datconfig as datconf
 import RPSvAI.models.CRutils as _crut
-import RPSvAI.models.empirical_ken as _emp
+import RPSvAI.models.empirical as _emp
 from sklearn.decomposition import PCA
 import RPSvAI.AIRPSfeatures as _aift
 

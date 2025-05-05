@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as _N
-import RPSvAI.models.empirical_ken as _emp
+import RPSvAI.models.empirical as _emp
 import RPSvAI.utils.read_taisen as _rt
 from RPSvAI.utils.dir_util import workdirFN
 import matplotlib.pyplot as _plt

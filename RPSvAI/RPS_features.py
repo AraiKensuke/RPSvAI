@@ -14,7 +14,6 @@ import pickle
 from RPSvAI.utils.dir_util import workdirFN
 
 import RPSvAI.models.CRutils as _crut
-import RPSvAI.models.empirical_ken as _emp
 
 import AIRPSfeatures as _aift
 
