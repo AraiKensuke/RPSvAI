@@ -1,4 +1,4 @@
-import RPSvAI.models.empirical_ken as empirical
+import RPSvAI.models.empirical as empirical
 import RPSvAI.utils.misc as _Am
 import numpy as _N
 import matplotlib.pyplot as _plt
