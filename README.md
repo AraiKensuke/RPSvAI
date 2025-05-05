@@ -6,7 +6,7 @@ Code for paper [Deviation from Nash mixed equilibrium in repeated rock-paper-sci
 2)  Download zip file from repository.
    Choose or create directory to unpack: `INSTALLDIR`.  Unpacking zip file in this directory creates RPSvAI-main folder in `INSTALLDIR`.
 
-3)  `conda create -f $INSTALLDIR/RPSvAI-main/environment.yml` to create environment to run code.
+3)  `conda env create -f $INSTALLDIR/RPSvAI-main/environment.yml` to create environment to run code.
 
 4)  Environment variables to set.\
 `TAISENDATA=$INSTALLDIR/DATA`\
