@@ -12,7 +12,7 @@ from RPSvAI.utils.dir_util import datadirFN, workdirFN
 import os
 
 #  70+40+40+50+50+40+10
-expt = "SIMHUM46"
+expt = "SIMHUM1"
 REPS       = 10
 
 nSIMHUM=int(expt[6:])
@@ -21,161 +21,43 @@ month_str = ["Jan","Feb", "Mar", "Apr", "May", "Jun",
              "Jul","Aug", "Sep", "Oct", "Nov", "Dec"]
 
 nohist_crats   = _N.array([0, 0.3333333333, 0.6666666666, 1])
-#nohist_crats   = _N.array([0, 0.2, 0.7, 1])
 
-###  [Win_stay, Lose_switch, ]
-#T0           = build_T([3., 0.3], [3., .3], [3., 0.3])
-#   T0 basically says if I lose, don't switch
-cyclic_strat_chg = False
-cyclic_jmp       = -1   #  or -1
+####   building block of rules
+e = 0.08    #  CR probability noise.  When set to 0, rule is deterministic
+#  These rules are noisy version of "do Y when X"
+Cmp1 = [1-2*e, e, e] #  prob act1, act2, act3 | COND1
+Cmp2 = [e, 1-2*e, e] #  prob act1, act2, act3 | COND2
+Cmp3 = [e, e, 1-2*e] #  prob act1, act2, act3 | COND3
 
-####  WEAK rules
-#     stay, change, change   -->
-#     change, change, change   -->  If perc. knows my current move, it is quite certain next move is going to be different
-#    change, change, stay
-####  STRONG rules
-#     stay, change, change
-#  [win_stay, win_change]    [tie_stay, tie_change],   [lose_stay, lose_change]
+Rnd=  [1/3, 1/3, 1/3]    #  use this to set it to random action
+"""    #####   Can also think about different type ofrules
+e = 0.05    #  CR probability noise.  When set to 0, rule is deterministic
+#  These rules are noisy version of "don't do Y when X"
+Cmp1 = [0.5-e, 0.5-e, 2*e] #  prob act1, act2, act3 | COND1
+Cmp2 = [0.5-e, 2*e, 0.5-e] #  prob act1, act2, act3 | COND2
+Cmp3 = [0.5-e, 0.5-e, 2*e] #  prob act1, act2, act3 | COND3
+"""
 
-#  [p(stay | win) p(go_to_weaker | win) p(go_to_stronger | win)]
-#  [p(stay | tie) p(go_to_weaker | tie) p(go_to_stronger | tie)]
-#  [p(stay | los) p(go_to_weaker | los) p(go_to_stronger | los)]
+###  Here, specify the set of rules to switch between
+#  DCU|wtl, RPS|wtl, DCU|rps, DCU|r_AC_A
+if (expt == "SIMHUM1"):
+    Frmwks      = [0]    ##  How to interpret the above probabilities
+    Trepertoire = [[Cmp1, Cmp3, Cmp2]] #  
+#  DCU|wtl, RPS|wtl, DCU|rps, DCU|r_AC_A
+if (expt == "SIMHUM2"):
+    Frmwks      = [2]
+    Trepertoire = [[Cmp1, Cmp3, Cmp2]] #  
+#  DCU|rps, 
+if (expt == "SIMHUM3"):
+    Frmwks      = [2]
+    Trepertoire = [[Cmp1, Cmp2, Cmp3]] #  D after r, C after p, U after s
+if (expt == "SIMHUM4"):
+    Frmwks      = [2]
+    Trepertoire = [[Cmp3, Cmp2, Cmp1]] #  D after r, C after p, U after s
+if (expt == "SIMHUM5"):
+    Frmwks      = [2, 4]
+    Trepertoire = [[Cmp3, Cmp2, Cmp1]] #  D after r, C after p, U after s
 
-e = 0.1
-
-Cmp1 = [1-2*e, e, e] #  prob stay, down, up | COND
-Cmp2 = [e, 1-2*e, e]
-Cmp3 = [e, e, 1-2*e]
-
-Rnd=  [1/3, 1/3, 1/3]
-
-
-if (expt == "SIMHUM2") or (expt == "SIMHUM5") or (expt == "SIMHUM13"):
-    Frmwks      = [1, 2, 4, 5]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Cmp2, Rnd, Cmp3],  #  
-                   [Cmp3, Rnd, Cmp2],  #  
-                   [Cmp2, Cmp3, Cmp3]]  #
-if (expt == "SIMHUM3") or (expt == "SIMHUM6"):
-    Frmwks      = [0, 1, 4, 5]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Rnd, Cmp3, Cmp2],  #  
-                   [Cmp3, Cmp1, Rnd],  #  
-                   [Cmp3, Cmp1, Cmp2]]  #
-if (expt == "SIMHUM10"):
-    Frmwks      = [0, 1, 4, 5, 1, 0, 2, 2]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Rnd, Cmp3, Cmp2],  #  
-                   [Cmp3, Cmp1, Rnd],  #  
-                   [Cmp3, Cmp1, Cmp2],
-                   [Cmp1, Cmp3, Cmp3], #  
-                   [Cmp3, Cmp1, Cmp2],  #  
-                   [Cmp2, Cmp1, Cmp2],  #  
-                   [Cmp1, Cmp3, Cmp1]]
-
-if (expt == "SIMHUM30"):
-    Frmwks      = [1, 2, 4, 5]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Cmp2, Rnd, Cmp3],  #  
-                   [Cmp3, Rnd, Cmp2],  #  
-                   [Cmp2, Cmp3, Cmp3]]  #
-if (expt == "SIMHUM31"):
-    Frmwks      = [1, 1, 4, 5]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Cmp3, Cmp1, Rnd],  #  
-                   [Cmp3, Rnd, Cmp2],  #  
-                   [Cmp2, Cmp3, Cmp3]]  #
-if (expt == "SIMHUM32"):
-    Frmwks      = [1, 3, 3, 3, 5]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Cmp1, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp2],  #  
-                   [Cmp2, Cmp3, Cmp3],
-                   [Cmp1, Cmp2, Rnd]]
-if (expt == "SIMHUM33"):
-    Frmwks      = [1, 1, 3, 3, 5]
-    Trepertoire = [[Cmp2, Cmp2, Cmp1], #  
-                   [Cmp2, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp2],  #  
-                   [Cmp2, Cmp1, Cmp1],
-                   [Rnd, Cmp1, Rnd]]
-if (expt == "SIMHUM34"):
-    Frmwks      = [2, 3, 3, 3, 5, 5]
-    Trepertoire = [[Cmp2, Cmp2, Cmp1], #  
-                   [Cmp1, Cmp2, Cmp3],  #  
-                   [Cmp3, Cmp1,  Cmp1],  #  
-                   [Cmp3, Cmp2, Cmp1],
-                   [Rnd, Cmp1, Rnd],
-                   [Cmp1, Cmp2, Cmp3]]
-if (expt == "SIMHUM35"):
-    Frmwks      = [0, 1, 4, 5, 1, 0, 2]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Rnd, Cmp3, Cmp2],  #  
-                   [Cmp3, Cmp1, Cmp2],
-                   [Cmp1, Cmp3, Cmp3], #  
-                   [Cmp3, Cmp1, Cmp2],  #  
-                   [Cmp2, Cmp1, Cmp2],  #  
-                   [Cmp1, Cmp3, Cmp1]]
-if (expt == "SIMHUM36"):
-    Frmwks      = [1, 1, 2, 4, 5]
-    Trepertoire = [[Cmp1, Cmp3, Cmp1], #  
-                   [Cmp2, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp1],  #  
-                   [Cmp2, Cmp3, Cmp3],
-                   [Rnd, Cmp2, Rnd]]
-
-
-if (expt == "SIMHUM40"):
-    Frmwks      = [1, 2, 4, 5]
-    Trepertoire = [[Cmp2, Cmp3, Rnd], #  
-                   [Cmp2, Rnd, Cmp3],  #  
-                   [Cmp3, Rnd, Cmp2],  #  
-                   [Rnd, Cmp3, Cmp3]]  #
-if (expt == "SIMHUM41"):
-    Frmwks      = [1, 1, 4, 5]
-    Trepertoire = [[Rnd, Cmp3, Cmp1], #  
-                   [Cmp3, Cmp1, Rnd],  #  
-                   [Cmp3, Rnd, Cmp2],  #  
-                   [Cmp2, Cmp3, Rnd]]  #
-if (expt == "SIMHUM42"):
-    Frmwks      = [1, 3, 3, 3, 5]
-    Trepertoire = [[Cmp2, Cmp3, Rnd], #  
-                   [Cmp1, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp2],  #  
-                   [Rnd, Cmp3, Cmp3],
-                   [Rnd, Cmp2, Rnd]]
-if (expt == "SIMHUM43"):
-    Frmwks      = [1, 1, 3, 3, 5]
-    Trepertoire = [[Cmp2, Cmp2, Rnd], #  
-                   [Cmp2, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp2],  #  
-                   [Cmp2, Rnd, Cmp1],
-                   [Rnd, Cmp1, Rnd]]
-if (expt == "SIMHUM44"):
-    Frmwks      = [2, 3, 3, 3, 5, 5]
-    Trepertoire = [[Rnd, Cmp2, Cmp1], #  
-                   [Cmp1, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Rnd],  #  
-                   [Cmp3, Cmp2, Cmp1],
-                   [Rnd, Cmp1, Rnd],
-                   [Cmp1, Cmp2, Cmp3]]
-if (expt == "SIMHUM45"):
-    Frmwks      = [0, 1, 4, 5, 1, 0, 2]
-    Trepertoire = [[Cmp2, Cmp3, Cmp1], #  
-                   [Rnd, Cmp3, Cmp2],  #  
-                   [Cmp3, Rnd, Cmp2],
-                   [Rnd, Cmp3, Cmp3], #  
-                   [Cmp3, Cmp1, Cmp2],  #  
-                   [Cmp2, Rnd, Cmp2],  #  
-                   [Cmp1, Rnd, Cmp1]]
-if (expt == "SIMHUM46"):
-    Frmwks      = [1, 1, 2, 4, 5]
-    Trepertoire = [[Cmp1, Rnd, Cmp1], #  
-                   [Cmp2, Cmp2, Cmp3],  #  
-                   [Cmp3, Rnd,  Cmp1],  #  
-                   [Cmp2, Cmp3, Rnd],
-                   [Rnd, Cmp2, Rnd]]
-    
     
 #  NMEvAI
 #  
@@ -195,10 +77,9 @@ if (expt == "SIMHUM46"):
 
 rounds  = 300
 
-vs_human   = False     #  is there dynamics in the human hand selection?
 human_hands_hist_dependent = True   # if vs_human is False, does AI play random or vs rule
-AI_algorithm       = prcptrn._PRC  #  _MC1, _MC2, _PRC
-mc_decay   = 0.1
+#AI_algorithm       = prcptrn._PRC  #  _MC1, _MC2, _PRC
+AI_algorithm       = prcptrn._NME  #  _MC1, _MC2, _PRC
 
 #   percept vs human
 #   percept vs computer (hist_dep)
@@ -210,7 +91,7 @@ mc_decay   = 0.1
 
 
 chg        = _N.zeros(REPS)
-fws        = _N.zeros((REPS, 3), dtype=_N.int)
+fws        = _N.zeros((REPS, 3), dtype=_N.int32)
 
 now     = datetime.datetime.now()
 day     = "%02d" % now.day
@@ -235,8 +116,10 @@ if not os.access(yr_dir, os.F_OK):
 else:
     os.system("rm -rf %s/*" % yr_dir)
 
-switch_T_shrt0 = 12
-switch_T_long0 = 18
+#switch_T_shrt0 = 10
+#switch_T_long0 = 16
+switch_T_shrt0 = 20
+switch_T_long0 = 30
 
 XTs1   = 1-0.1*_N.random.rand(REPS) 
 XTs2   = 1+0.1*_N.random.rand(REPS)
@@ -261,11 +144,12 @@ for rep in range(REPS):
             
     strt_chg_times    = _N.cumsum(strt_chg_intvs)
     uptohere          = len(_N.where(strt_chg_times < rounds)[0])
-    strt_chg_times01  = _N.zeros(rounds+1, dtype=_N.int)
+    strt_chg_times01  = _N.zeros(rounds+1, dtype=_N.int32)
     strt_chg_times01[strt_chg_times[0:uptohere]] = 1
 
     Ts_timeseries = []
     Fr_timeseries = []
+    Rule_timeseries = []    
     rule_change_times = []
 
     sec    = rep % 60
@@ -297,7 +181,7 @@ for rep in range(REPS):
     # x = _N.zeros(3*N+1)              # past moves by player 
     # x[3*N]=-1                        # threshold      x[3*N] never changes
     # w = _N.zeros(9*N+3)              # weights
-    fw= _N.zeros(3, dtype=_N.int)    #  cum win, draw, lose
+    fw= _N.zeros(3, dtype=_N.int32)    #  cum win, draw, lose
 
     HAL9000 = prcptrn.perceptronJS(N, AI_algorithm)
 
@@ -319,8 +203,8 @@ for rep in range(REPS):
     prevWTL = 1
 
     #prev_gcp_wtl = _N.zeros((9, 1), dtype=_N.int)
-    prev_gcp_wtl = _N.zeros(9, dtype=_N.int)  #  prev goo chok paa win tie los
-    prev_gcp_wtl_unob = _N.zeros(9, dtype=_N.int)
+    prev_gcp_wtl = _N.zeros(9, dtype=_N.int32)  #  prev goo chok paa win tie los
+    prev_gcp_wtl_unob = _N.zeros(9, dtype=_N.int32)
 
     iSinceLastStrChg = 0
 
@@ -338,7 +222,7 @@ for rep in range(REPS):
 
         #pred=_N.random.randint(1, 4) if vs_NME else HAL9000.predict(m,x,w,v, update=(hds%20==0))   # pred is prediction of user move (1,2,3) */
 
-        pred=_N.int(HAL9000.predict(int(pair[1])))   # pred is prediction of user move (1,2,3) */)
+        pred=int(HAL9000.predict(int(pair[1])))   # pred is prediction of user move (1,2,3) */)
 
         #pred=_N.random.randint(1, 4) if vs_NME else HAL9000.predict(m,x,w,v)   # pred is prediction of user move (1,2,3) */
         #pred=_N.random.randint(1, 4) if vs_NME else HAL9000.predict(m,x,w,v, update=True, uw=0.0001)   # pred is prediction of user move (1,2,3) */
@@ -347,7 +231,7 @@ for rep in range(REPS):
             if strt_chg_times01[hds] == 1:
                 rule_change_times.append(hds)
                 candidate = _N.random.randint(0, Ts.shape[0])
-                while candidate == iCurrT:
+                while candidate == iCurrT:  #  keep doing until different rrule set found
                     candidate = _N.random.randint(0, Ts.shape[0])
                 iCurrT = candidate
                 switch_ts.append(hds)
@@ -376,6 +260,7 @@ for rep in range(REPS):
 
             Ts_timeseries.append(Ts[iCurrT])
             Fr_timeseries.append(Frmwks[iCurrT])
+            Rule_timeseries.append(iCurrT)            
         else:  #  not human_hands_hist_dependent
             rnd = _N.random.rand()
             m = _N.where((rnd >= nohist_crats[0:-1]) & (rnd < nohist_crats[1:]))[0][0]+1
@@ -432,10 +317,9 @@ for rep in range(REPS):
     gt_file_nm = "/Users/arai/nctc/Workspace/RPSvAI_SimDAT/%s_GT.dat" % jh_fn_mod
     #u_fnm = uniqFN("SimDAT/%s" % file_nm, serial=True)
     #u_fnm_gt = uniqFN("SimDAT/%s" % gt_file_nm, serial=True)
-    hnd_dat = _N.array(pairs, dtype=_N.int)
+    hnd_dat = _N.array(pairs, dtype=_N.int32)
     #_N.savetxt(file_nm, hnd_dat, fmt="%d %d % d %d")
     #print("janken match data: %s" % file_nm)
-    #if human_hands_hist_dependent and (not vs_human):
     
     pklme = {}
     pklme["hnd_dat"] = hnd_dat
@@ -453,6 +337,7 @@ for rep in range(REPS):
     
         pklme["Ts_timeseries"] = tts
         pklme["Fr_timeseries"] = Fr_timeseries
+        pklme["Rule_timeseries"] = Rule_timeseries        
         pklme["rule_change_times"] = _N.array(rule_change_times)
         
     
